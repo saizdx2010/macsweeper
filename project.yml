@@ -1,0 +1,33 @@
+name: MacSweeper
+options:
+  bundleIdPrefix: com.macsweeper
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+targets:
+  MacSweeper:
+    type: application
+    platform: macOS
+    sources:
+      - path: MacSweeper
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.macsweeper.app
+        PRODUCT_NAME: MacSweeper
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: MacSweeper
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 Sai Prashanth"
+        INFOPLIST_KEY_NSPrincipalClass: NSApplication
+        COMBINE_HIDPI_IMAGES: YES
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_STYLE: Automatic
+    scheme:
+      testTargets: []

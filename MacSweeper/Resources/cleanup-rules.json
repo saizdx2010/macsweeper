@@ -1,0 +1,23 @@
+[
+  {
+    "id": "browser_chrome_cache",
+    "label": "Chrome cache",
+    "paths": ["~/Library/Caches/Google/Chrome"],
+    "risk": "safe",
+    "description": "Temporary files; Chrome rebuilds these automatically."
+  },
+  {
+    "id": "browser_safari_cache",
+    "label": "Safari cache",
+    "paths": ["~/Library/Caches/com.apple.Safari"],
+    "risk": "safe",
+    "description": "Temporary files; Safari rebuilds these automatically."
+  },
+  {
+    "id": "user_logs",
+    "label": "User logs",
+    "paths": ["~/Library/Logs"],
+    "risk": "safe",
+    "description": "Application log files that regenerate as apps run."
+  }
+]
