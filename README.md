@@ -6,7 +6,7 @@ Inspired by [ncdu](https://dev.yorhel.nl/ncdu) and [mac-cleanup-go](https://gith
 
 ## Status
 
-Phase 2: scan + preview + move selected items to Trash, with confirm dialog, session audit log, and undo hint.
+Phase 3: cancelable streaming scan, hard-link-aware sizes, and optional Empty Trash with Full Disk Access guidance.
 
 ## Requirements
 
@@ -39,7 +39,7 @@ MacSweeper/
 ├── App/           # SwiftUI entry
 ├── Views/         # Home, Results, Detail, Clean
 ├── Models/        # Categories, results, risk levels
-├── Services/      # Scan, cleanup (Trash), audit log, disk space
+├── Services/      # Scan, cleanup, audit, disk space, Full Disk Access
 └── Resources/     # cleanup-rules.json
 ```
 

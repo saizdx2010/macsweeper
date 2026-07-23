@@ -10,6 +10,7 @@ struct CleanFlowView: View {
     @State private var phase: Phase = .confirm
     @State private var outcome: CleanupService.Outcome?
     @State private var showConfirmation = false
+    @State private var showFDAPrompt = false
     @State private var errorMessage: String?
     @State private var isRestoring = false
     @State private var didUndo = false
@@ -28,6 +29,14 @@ struct CleanFlowView: View {
         ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file)
     }
 
+    private var includesEmptyTrash: Bool {
+        results.contains { $0.category.action == .emptyTrash }
+    }
+
+    private var includesMoveToTrash: Bool {
+        results.contains { $0.category.action != .emptyTrash }
+    }
+
     enum Phase {
         case confirm
         case working
@@ -40,7 +49,7 @@ struct CleanFlowView: View {
             case .confirm:
                 confirmView
             case .working:
-                ProgressView(isRestoring ? "Restoring…" : "Moving to Trash…")
+                ProgressView(workingLabel)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .done:
                 doneView
@@ -49,16 +58,27 @@ struct CleanFlowView: View {
         .navigationTitle("Clean")
         .padding()
         .confirmationDialog(
-            "Move \(sizeLabel) to Trash?",
+            confirmationTitle,
             isPresented: $showConfirmation,
             titleVisibility: .visible
         ) {
-            Button("Move to Trash", role: .destructive) {
+            Button(primaryConfirmButtonTitle, role: .destructive) {
                 Task { await performClean() }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text(confirmationMessage)
+        }
+        .alert("Full Disk Access needed", isPresented: $showFDAPrompt) {
+            Button("Open System Settings") {
+                FullDiskAccessService.openSystemSettings()
+            }
+            Button("Continue anyway", role: .destructive) {
+                showConfirmation = true
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("We need Full Disk Access to empty Trash completely. Files never leave your Mac.")
         }
         .alert("Clean failed", isPresented: Binding(
             get: { errorMessage != nil && phase == .confirm },
@@ -70,9 +90,42 @@ struct CleanFlowView: View {
         }
     }
 
+    private var workingLabel: String {
+        if isRestoring { return "Restoring…" }
+        if includesEmptyTrash && !includesMoveToTrash { return "Emptying Trash…" }
+        if includesEmptyTrash { return "Cleaning…" }
+        return "Moving to Trash…"
+    }
+
+    private var confirmationTitle: String {
+        if includesEmptyTrash && !includesMoveToTrash {
+            return "Permanently empty Trash (\(sizeLabel))?"
+        }
+        if includesEmptyTrash {
+            return "Clean \(sizeLabel)? Some items are permanent."
+        }
+        return "Move \(sizeLabel) to Trash?"
+    }
+
+    private var primaryConfirmButtonTitle: String {
+        if includesEmptyTrash && !includesMoveToTrash {
+            return "Empty Trash"
+        }
+        if includesEmptyTrash {
+            return "Clean"
+        }
+        return "Move to Trash"
+    }
+
     private var confirmationMessage: String {
         let categoryWord = results.count == 1 ? "category" : "categories"
         let itemWord = totalItems == 1 ? "item" : "items"
+        if includesEmptyTrash && !includesMoveToTrash {
+            return "This permanently deletes \(totalItems) \(itemWord) in Trash. It cannot be undone."
+        }
+        if includesEmptyTrash {
+            return "\(results.count) \(categoryWord) · \(totalItems) \(itemWord). Empty Trash cannot be undone; other items move to Trash."
+        }
         return "\(results.count) \(categoryWord) · \(totalItems) \(itemWord). Items move to Trash and can be restored anytime."
     }
 
@@ -83,7 +136,14 @@ struct CleanFlowView: View {
 
             List(results) { result in
                 HStack {
-                    Text(result.category.label)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(result.category.label)
+                        if result.category.action == .emptyTrash {
+                            Text("Permanent delete")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                    }
                     Spacer()
                     Text(ByteCountFormatter.string(fromByteCount: result.totalBytes, countStyle: .file))
                         .foregroundStyle(.secondary)
@@ -91,7 +151,7 @@ struct CleanFlowView: View {
             }
             .frame(minHeight: 120)
 
-            Text("Items move to Trash. You can restore them from Trash anytime.")
+            Text(confirmFootnote)
                 .foregroundStyle(.secondary)
 
             HStack {
@@ -99,13 +159,30 @@ struct CleanFlowView: View {
                     navigationPath.removeLast()
                 }
                 Spacer()
-                Button("Move to Trash") {
-                    showConfirmation = true
+                Button(primaryActionTitle) {
+                    requestClean()
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(results.isEmpty)
             }
         }
+    }
+
+    private var primaryActionTitle: String {
+        if includesEmptyTrash && !includesMoveToTrash {
+            return "Empty Trash"
+        }
+        return "Move to Trash"
+    }
+
+    private var confirmFootnote: String {
+        if includesEmptyTrash && !includesMoveToTrash {
+            return "Emptying Trash permanently deletes files. This cannot be undone."
+        }
+        if includesEmptyTrash {
+            return "Selected items move to Trash except Empty Trash, which permanently deletes."
+        }
+        return "Items move to Trash. You can restore them from Trash anytime."
     }
 
     private var doneView: some View {
@@ -120,25 +197,43 @@ struct CleanFlowView: View {
             } else {
                 Text("Freed \(ByteCountFormatter.string(fromByteCount: outcome?.freedBytes ?? 0, countStyle: .file))")
                     .font(.title.weight(.semibold))
-                Text("\(outcome?.itemCount ?? 0) items moved to Trash")
-                    .foregroundStyle(.secondary)
+
+                if outcome?.emptiedTrash == true && !(outcome?.moved.isEmpty == false) {
+                    Text("\(outcome?.itemCount ?? 0) items permanently deleted from Trash")
+                        .foregroundStyle(.secondary)
+                } else if outcome?.emptiedTrash == true {
+                    Text("\(outcome?.itemCount ?? 0) items cleaned (including Empty Trash)")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("\(outcome?.itemCount ?? 0) items moved to Trash")
+                        .foregroundStyle(.secondary)
+                }
 
                 if let failures = outcome?.failures, !failures.isEmpty {
-                    Text("\(failures.count) item\(failures.count == 1 ? "" : "s") could not be moved.")
+                    Text("\(failures.count) item\(failures.count == 1 ? "" : "s") could not be cleaned.")
                         .font(.footnote)
                         .foregroundStyle(.orange)
                 }
 
-                Text("Undo restores items still in Trash, or open Trash in Finder.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                if outcome?.emptiedTrash != true {
+                    Text("Undo restores items still in Trash, or open Trash in Finder.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                } else if outcome?.moved.isEmpty == false {
+                    Text("Undo restores moved items still in Trash. Emptied Trash cannot be undone.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
             }
 
             HStack(spacing: 12) {
                 if !didUndo {
-                    Button("Open Trash") {
-                        openTrash()
+                    if outcome?.emptiedTrash != true || !(outcome?.moved.isEmpty ?? true) {
+                        Button("Open Trash") {
+                            openTrash()
+                        }
                     }
 
                     if let moved = outcome?.moved, !moved.isEmpty {
@@ -159,6 +254,14 @@ struct CleanFlowView: View {
         .frame(maxWidth: .infinity)
     }
 
+    private func requestClean() {
+        if includesEmptyTrash && !FullDiskAccessService.isGranted() {
+            showFDAPrompt = true
+        } else {
+            showConfirmation = true
+        }
+    }
+
     private func performClean() async {
         phase = .working
         errorMessage = nil
@@ -168,6 +271,19 @@ struct CleanFlowView: View {
             outcome = result
             if !result.moved.isEmpty {
                 auditLog.finishClean(moved: result.moved)
+            } else if result.emptiedTrash && result.itemCount > 0 {
+                // Record a synthetic audit line for empty trash.
+                let trashPath = NSHomeDirectory() + "/.Trash"
+                auditLog.finishClean(
+                    moved: [
+                        CleanupService.MovedItem(
+                            categoryID: "empty_trash",
+                            originalPath: trashPath,
+                            trashURL: URL(fileURLWithPath: trashPath),
+                            byteCount: result.freedBytes
+                        )
+                    ]
+                )
             }
             phase = .done
         } catch is CancellationError {

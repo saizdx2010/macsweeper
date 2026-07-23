@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		01C6960DD6B71B0DFC2F31D2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 130BEDC5315FFCE5F30C5530 /* Assets.xcassets */; };
 		0C1FB387A02E42218D94E1C2 /* DiskSpaceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A702EAA2CE3FB7AA2AA4DA7 /* DiskSpaceService.swift */; };
+		15F661DA33832B0DDA768911 /* FullDiskAccessService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D44BEC7001E3F9DF9829CD4F /* FullDiskAccessService.swift */; };
 		1611116B64EC3BC736FD7407 /* MacSweeperApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 831085989A1B279E4F518F34 /* MacSweeperApp.swift */; };
 		4A0A02BFD855CD50F49D0518 /* AuditLogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F36E0F5DF82E0A4A84314D2E /* AuditLogService.swift */; };
 		6C10E493BD6E913FD9487BB7 /* ScanEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88BF90177A8C59D9B06421D /* ScanEngine.swift */; };
@@ -36,6 +37,7 @@
 		A42846CF146659AB5D63326C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		A88BF90177A8C59D9B06421D /* ScanEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanEngine.swift; sourceTree = "<group>"; };
 		AC2CCB0413DD8BB7F38B70A5 /* RiskLevel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiskLevel.swift; sourceTree = "<group>"; };
+		D44BEC7001E3F9DF9829CD4F /* FullDiskAccessService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullDiskAccessService.swift; sourceTree = "<group>"; };
 		E241B0B13067F89EE9B0D28E /* MacSweeper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacSweeper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F36E0F5DF82E0A4A84314D2E /* AuditLogService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuditLogService.swift; sourceTree = "<group>"; };
 		F74B6AAA7D166E0BA57A1EBE /* cleanup-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "cleanup-rules.json"; sourceTree = "<group>"; };
@@ -75,6 +77,7 @@
 				F36E0F5DF82E0A4A84314D2E /* AuditLogService.swift */,
 				03415387026D5AE19CD73007 /* CleanupService.swift */,
 				2A702EAA2CE3FB7AA2AA4DA7 /* DiskSpaceService.swift */,
+				D44BEC7001E3F9DF9829CD4F /* FullDiskAccessService.swift */,
 				A88BF90177A8C59D9B06421D /* ScanEngine.swift */,
 			);
 			path = Services;
@@ -195,6 +198,7 @@
 				8B1CA678A0A7A1B1FD2A2F92 /* CleanFlowView.swift in Sources */,
 				B7EACD8A3AF80B09F6017925 /* CleanupService.swift in Sources */,
 				0C1FB387A02E42218D94E1C2 /* DiskSpaceService.swift in Sources */,
+				15F661DA33832B0DDA768911 /* FullDiskAccessService.swift in Sources */,
 				9F780ED58C215B516D4B6CBB /* HomeView.swift in Sources */,
 				1611116B64EC3BC736FD7407 /* MacSweeperApp.swift in Sources */,
 				CB29CC1C764F0BE791A46E19 /* RiskLevel.swift in Sources */,

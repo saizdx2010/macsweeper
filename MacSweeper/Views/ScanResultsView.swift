@@ -3,8 +3,11 @@ import SwiftUI
 struct ScanResultsView: View {
     @State private var results: [ScanResult] = []
     @State private var isScanning = false
+    @State private var wasCancelled = false
     @State private var errorMessage: String?
     @State private var loadedRuleCount = 0
+    @State private var scannedRuleCount = 0
+    @State private var scanTask: Task<Void, Never>?
 
     private let engine = ScanEngine()
 
@@ -17,7 +20,13 @@ struct ScanResultsView: View {
     }
 
     private var titleText: String {
-        if isScanning || errorMessage != nil || results.isEmpty {
+        if isScanning {
+            return "Scanning…"
+        }
+        if errorMessage != nil || (results.isEmpty && !wasCancelled) {
+            return "Results"
+        }
+        if results.isEmpty {
             return "Results"
         }
         return "Found \(ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file))"
@@ -25,9 +34,15 @@ struct ScanResultsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if isScanning {
-                ProgressView("Scanning…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if isScanning && results.isEmpty {
+                VStack(spacing: 16) {
+                    ProgressView(scanProgressLabel)
+                    Button("Cancel") {
+                        cancelScan()
+                    }
+                    .keyboardShortcut(.cancelAction)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let errorMessage {
                 ContentUnavailableView(
                     "Scan failed",
@@ -36,34 +51,63 @@ struct ScanResultsView: View {
                 )
             } else if results.isEmpty {
                 ContentUnavailableView(
-                    "No reclaimable space found",
-                    systemImage: "tray",
-                    description: Text("Checked \(loadedRuleCount) rules under your home folder. Nothing matched with measurable size.")
+                    wasCancelled ? "Scan cancelled" : "No reclaimable space found",
+                    systemImage: wasCancelled ? "stop.circle" : "tray",
+                    description: Text(
+                        wasCancelled
+                            ? "No categories finished before cancel."
+                            : "Checked \(loadedRuleCount) rules under your home folder. Nothing matched with measurable size."
+                    )
                 )
             } else {
-                List {
-                    ForEach($results) { $result in
-                        NavigationLink(value: AppRoute.detail(result)) {
-                            HStack {
-                                Toggle("", isOn: $result.isSelected)
-                                    .labelsHidden()
-                                    .disabled(result.category.risk == .manual)
+                VStack(alignment: .leading, spacing: 0) {
+                    if isScanning {
+                        HStack {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text(scanProgressLabel)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Button("Cancel") {
+                                cancelScan()
+                            }
+                            .font(.caption)
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
+                    }
 
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(result.category.label)
-                                    Text(result.category.risk.displayName)
-                                        .font(.caption)
-                                        .foregroundStyle(riskColor(result.category.risk))
+                    List {
+                        ForEach($results) { $result in
+                            NavigationLink(value: AppRoute.detail(result)) {
+                                HStack {
+                                    Toggle("", isOn: $result.isSelected)
+                                        .labelsHidden()
+                                        .disabled(result.category.risk == .manual)
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(result.category.label)
+                                        Text(result.category.risk.displayName)
+                                            .font(.caption)
+                                            .foregroundStyle(riskColor(result.category.risk))
+                                    }
+
+                                    Spacer()
+
+                                    Text(ByteCountFormatter.string(fromByteCount: result.totalBytes, countStyle: .file))
+                                        .monospacedDigit()
+                                        .foregroundStyle(.secondary)
                                 }
-
-                                Spacer()
-
-                                Text(ByteCountFormatter.string(fromByteCount: result.totalBytes, countStyle: .file))
-                                    .monospacedDigit()
-                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
+
+                    Text("Sizes are approximate (allocated disk use; hard links counted once).")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal)
+                        .padding(.bottom, 6)
                 }
             }
 
@@ -74,15 +118,36 @@ struct ScanResultsView: View {
                     .foregroundStyle(.secondary)
                 Spacer()
                 NavigationLink("Clean Now", value: AppRoute.clean(results.filter(\.isSelected)))
-                    .disabled(results.filter(\.isSelected).isEmpty)
+                    .disabled(isScanning || results.filter(\.isSelected).isEmpty)
                     .buttonStyle(.borderedProminent)
             }
             .padding()
         }
         .navigationTitle(titleText)
-        .task {
-            await runScan()
+        .toolbar {
+            if !isScanning {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Rescan") {
+                        startScan()
+                    }
+                }
+            }
         }
+        .onAppear {
+            if results.isEmpty && !isScanning && errorMessage == nil && !wasCancelled {
+                startScan()
+            }
+        }
+        .onDisappear {
+            cancelScan()
+        }
+    }
+
+    private var scanProgressLabel: String {
+        if loadedRuleCount > 0 {
+            return "Scanning rules… \(scannedRuleCount)/\(loadedRuleCount)"
+        }
+        return "Scanning…"
     }
 
     private func riskColor(_ risk: RiskLevel) -> Color {
@@ -98,19 +163,54 @@ struct ScanResultsView: View {
         }
     }
 
-    private func runScan() async {
-        isScanning = true
+    private func startScan() {
+        cancelScan()
+        results = []
         errorMessage = nil
-        defer { isScanning = false }
+        wasCancelled = false
+        scannedRuleCount = 0
+        loadedRuleCount = 0
+        isScanning = true
 
-        do {
-            let categories = try await engine.loadCategories()
-            loadedRuleCount = categories.count
-            results = try await engine.scan()
-        } catch is CancellationError {
-            // View disappeared mid-scan.
-        } catch {
-            errorMessage = error.localizedDescription
+        scanTask = Task {
+            do {
+                let categories = try await engine.loadCategories()
+                loadedRuleCount = categories.count
+
+                for try await event in engine.scanStream() {
+                    try Task.checkCancellation()
+                    switch event {
+                    case .started(let ruleCount):
+                        loadedRuleCount = ruleCount
+                    case .ruleFinished(let current, let total):
+                        scannedRuleCount = current
+                        loadedRuleCount = total
+                    case .category(let result):
+                        insertSorted(result)
+                    case .finished:
+                        break
+                    }
+                }
+            } catch is CancellationError {
+                wasCancelled = true
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            isScanning = false
+            scanTask = nil
+        }
+    }
+
+    private func cancelScan() {
+        scanTask?.cancel()
+        scanTask = nil
+    }
+
+    private func insertSorted(_ result: ScanResult) {
+        if let index = results.firstIndex(where: { $0.totalBytes < result.totalBytes }) {
+            results.insert(result, at: index)
+        } else {
+            results.append(result)
         }
     }
 }

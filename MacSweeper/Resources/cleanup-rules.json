@@ -142,5 +142,13 @@
     ],
     "risk": "safe",
     "description": "Artwork and media service caches for Music and related apps."
+  },
+  {
+    "id": "empty_trash",
+    "label": "Empty Trash",
+    "paths": ["~/.Trash"],
+    "risk": "moderate",
+    "action": "empty_trash",
+    "description": "Permanently deletes everything currently in Trash. Off by default. May need Full Disk Access for some items."
   }
 ]

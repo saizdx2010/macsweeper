@@ -1,6 +1,6 @@
 import Foundation
 
-/// Moves selected scan results to Trash (never permanent delete).
+/// Moves selected scan results to Trash (never permanent delete, except Empty Trash).
 actor CleanupService {
     struct MovedItem: Equatable, Identifiable, Sendable {
         var id: String { originalPath }
@@ -21,6 +21,16 @@ actor CleanupService {
         let itemCount: Int
         let moved: [MovedItem]
         let failures: [Failure]
+        /// True when at least one Empty Trash action ran (no undo).
+        let emptiedTrash: Bool
+
+        static let empty = Outcome(
+            freedBytes: 0,
+            itemCount: 0,
+            moved: [],
+            failures: [],
+            emptiedTrash: false
+        )
     }
 
     private let fileManager: FileManager
@@ -48,14 +58,28 @@ actor CleanupService {
         self.homeDirectory = NSHomeDirectory()
     }
 
-    /// Moves each scanned path to Trash. Continues on per-path errors.
+    /// Moves paths to Trash and/or permanently empties Trash when selected.
     func moveToTrash(_ results: [ScanResult]) async throws -> Outcome {
         var moved: [MovedItem] = []
         var failures: [Failure] = []
+        var emptiedTrash = false
+        var emptiedBytes: Int64 = 0
+        var emptiedCount = 0
 
         let selected = results.filter { $0.isSelected && $0.category.risk != .manual }
 
         for result in selected {
+            try Task.checkCancellation()
+
+            if result.category.action == .emptyTrash {
+                let emptyOutcome = try emptyTrashContents(byteHint: result.totalBytes)
+                emptiedTrash = true
+                emptiedBytes += emptyOutcome.freedBytes
+                emptiedCount += emptyOutcome.itemCount
+                failures.append(contentsOf: emptyOutcome.failures)
+                continue
+            }
+
             for scanned in result.paths {
                 try Task.checkCancellation()
 
@@ -97,12 +121,60 @@ actor CleanupService {
             }
         }
 
-        let freed = moved.reduce(Int64(0)) { $0 + $1.byteCount }
+        let movedBytes = moved.reduce(Int64(0)) { $0 + $1.byteCount }
+        return Outcome(
+            freedBytes: movedBytes + emptiedBytes,
+            itemCount: moved.count + emptiedCount,
+            moved: moved,
+            failures: failures,
+            emptiedTrash: emptiedTrash
+        )
+    }
+
+    /// Permanently deletes items currently in `~/.Trash`.
+    func emptyTrashContents(byteHint: Int64) throws -> Outcome {
+        let trashPath = homeDirectory + "/.Trash"
+        guard fileManager.fileExists(atPath: trashPath) else {
+            return .empty
+        }
+
+        let trashURL = URL(fileURLWithPath: trashPath, isDirectory: true)
+        let contents: [URL]
+        do {
+            contents = try fileManager.contentsOfDirectory(
+                at: trashURL,
+                includingPropertiesForKeys: nil,
+                options: []
+            )
+        } catch {
+            return Outcome(
+                freedBytes: 0,
+                itemCount: 0,
+                moved: [],
+                failures: [Failure(path: trashPath, message: error.localizedDescription)],
+                emptiedTrash: true
+            )
+        }
+
+        var failures: [Failure] = []
+        var deleted = 0
+        for item in contents {
+            do {
+                try fileManager.removeItem(at: item)
+                deleted += 1
+            } catch {
+                failures.append(Failure(path: item.path, message: error.localizedDescription))
+            }
+        }
+
+        // Prefer scan hint when we deleted everything; otherwise leave hint but report count.
+        let freed = failures.isEmpty ? byteHint : 0
         return Outcome(
             freedBytes: freed,
-            itemCount: moved.count,
-            moved: moved,
-            failures: failures
+            itemCount: deleted,
+            moved: [],
+            failures: failures,
+            emptiedTrash: true
         )
     }
 
@@ -148,7 +220,8 @@ actor CleanupService {
             freedBytes: bytes,
             itemCount: restored.count,
             moved: restored,
-            failures: failures
+            failures: failures,
+            emptiedTrash: false
         )
     }
 
@@ -156,11 +229,16 @@ actor CleanupService {
 
     private func isAllowedToTrash(_ path: String) -> Bool {
         let standardized = (path as NSString).standardizingPath
-        guard standardized.hasPrefix(homeDirectory + "/") else { return false }
+        guard standardized.hasPrefix(homeDirectory + "/") || standardized == homeDirectory + "/.Trash" else {
+            // Allow ~/.Trash itself only for empty-trash action (handled separately).
+            return false
+        }
         guard standardized != homeDirectory else { return false }
 
+        // Never move the Trash folder itself via trashItem.
+        if standardized == homeDirectory + "/.Trash" { return false }
+
         let relative = String(standardized.dropFirst(homeDirectory.count + 1))
-        // Never trash the entire Library folder.
         if relative == "Library" { return false }
 
         for prefix in protectedPrefixes {
