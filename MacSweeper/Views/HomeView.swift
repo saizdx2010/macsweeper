@@ -12,6 +12,7 @@ struct HomeView: View {
 
     private let diskSpace = DiskSpaceService()
     private let diskPressureThreshold = 0.85
+    private let contentMaxWidth: CGFloat = 580
 
     private static let relativeFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
@@ -62,17 +63,21 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.top, 4)
 
-                ViewThatFits(in: .horizontal) {
-                    splitHero
-                    stackedHero
+                VStack(spacing: 0) {
+                    ViewThatFits(in: .horizontal) {
+                        splitHero
+                        stackedHero
+                    }
+                    .padding(.top, 24)
+
+                    coverageBand
+                        .padding(.top, 28)
+
+                    footerZone
+                        .padding(.top, 20)
                 }
-                .padding(.top, 24)
-
-                coverageBand
-                    .padding(.top, 28)
-
-                footerZone
-                    .padding(.top, 20)
+                .frame(maxWidth: contentMaxWidth)
+                .frame(maxWidth: .infinity)
 
                 Spacer(minLength: 8)
             }
@@ -102,7 +107,7 @@ struct HomeView: View {
         HStack(alignment: .center, spacing: 28) {
             diskRing
             infoColumn(alignment: .leading)
-                .frame(maxWidth: 360, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity)
     }
@@ -111,7 +116,7 @@ struct HomeView: View {
         VStack(spacing: 20) {
             diskRing
             infoColumn(alignment: .center)
-                .frame(maxWidth: 360)
+                .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity)
     }
@@ -158,17 +163,30 @@ struct HomeView: View {
                 .multilineTextAlignment(textAlignment)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("caches · logs · Xcode · Trash")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(textAlignment)
-
             PrimaryCTANavigationLink(
                 title: "Scan My Mac",
                 value: AppRoute.scanning
             )
             .frame(maxWidth: 280)
             .padding(.top, 4)
+
+            if !hasFullDiskAccess {
+                VStack(alignment: alignment, spacing: 4) {
+                    Button("Full Disk Access needed → Open Settings") {
+                        FullDiskAccessService.openSystemSettings()
+                    }
+                    .buttonStyle(.plain)
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(MSTheme.accent)
+                    .multilineTextAlignment(textAlignment)
+
+                    Text("Required to empty Trash.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(textAlignment)
+                }
+                .padding(.top, 2)
+            }
         }
     }
 
@@ -176,8 +194,11 @@ struct HomeView: View {
 
     private var coverageBand: some View {
         VStack(alignment: .leading, spacing: 12) {
+            Divider()
+                .opacity(0.45)
+
             Text("What a scan looks for")
-                .font(.subheadline.weight(.semibold))
+                .font(.headline)
                 .foregroundStyle(.primary)
 
             ViewThatFits(in: .horizontal) {
@@ -227,10 +248,10 @@ struct HomeView: View {
     private func coverageColumnView(_ column: CoverageColumn) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(column.title)
-                .font(.subheadline.weight(.medium))
+                .font(.body.weight(.medium))
                 .foregroundStyle(.primary)
             Text(column.blurb)
-                .font(.footnote)
+                .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
                 .lineLimit(2)
@@ -257,15 +278,6 @@ struct HomeView: View {
             Text(lastCleanLabel)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-
-            if !hasFullDiskAccess {
-                Button("Full Disk Access needed → Open Settings") {
-                    FullDiskAccessService.openSystemSettings()
-                }
-                .buttonStyle(.plain)
-                .font(.footnote)
-                .foregroundStyle(MSTheme.accent)
-            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.bottom, 4)
@@ -282,9 +294,9 @@ struct HomeView: View {
 
     private var devModeCaption: String {
         if includeDevMode {
-            return "Also scans: node_modules · venvs · Homebrew · Docker"
+            return "Also scans project folders for node_modules and virtualenvs."
         }
-        return "Scans project folders for node_modules and virtualenvs, plus Homebrew and Docker guidance."
+        return "Scans project folders for node_modules and virtualenvs."
     }
 
     private var lastCleanLabel: String {
