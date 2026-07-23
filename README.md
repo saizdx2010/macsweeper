@@ -1,14 +1,48 @@
 # MacSweeper
 
-A lightweight, native macOS disk cleaner — scan, preview, clean safely. No subscriptions, no scare tactics. Free forever.
+A lightweight, native macOS disk cleaner. Scan, preview, and reclaim space safely — no subscriptions, no scare tactics, free forever.
 
 Inspired by [ncdu](https://dev.yorhel.nl/ncdu) and [mac-cleanup-go](https://github.com/2ykwang/mac-cleanup-go). Full product spec: [PRODUCT.md](PRODUCT.md).
 
+## What it is
+
+MacSweeper does three things well:
+
+1. **Scan** — find reclaimable space (browser/app caches, logs, Xcode junk, optional Dev folders)
+2. **Preview** — show every path, size, and risk level before anything moves
+3. **Clean safely** — move to Trash by default; never surprise-delete
+
+No malware scanner, no “RAM cleaner,” no upsells. Just real disk reclaim with transparent paths.
+
+## Features
+
+- **Home** — free-space ring, one primary **Scan**, and a secondary **Browse disk**
+- **Category results** — sized, risk-labeled rows (Safe / Moderate / Risky / Manual); Safe items checked by default
+- **Detail** — expand a category to see paths, why they’re listed, and per-item selection (plus age/size filters for Downloads and Mail)
+- **Clean flow** — confirm → progress → “Freed X GB” with Open Trash / undo hints
+- **Browse disk** — ncdu-style list drill-down under `~` (or a chosen home folder); **Cleanable** badges jump to matching rules after a scan
+- **Dev mode** (opt-in) — `node_modules`, virtualenvs, package-manager caches, Cargo/Gradle, Homebrew/Docker guidance
+- **Settings & history** — Dev defaults, custom Dev scan folders, optional persistent cleanup history
+- **~46 reclaim rules** — browsers, messaging, JetBrains, Steam, Xcode/simulator, Electron apps, and more (see `MacSweeper/Resources/cleanup-rules.json`)
+
+## Safety
+
+| Rule | Behavior |
+|------|----------|
+| **Trash first** | Never permanent-delete except explicit Empty Trash |
+| **Preview always** | Dry-run sizes; user confirms before any move |
+| **Risk labels** | Risky unchecked and de-emphasized; Manual is guide-only (copyable commands, no shell-out) |
+| **Hard exclusions** | Documents, Desktop, Pictures, Music, Movies, iCloud, keychains, profiles, SIP paths |
+| **Home only** | No system `/private/var` deep cleans; no sudo |
+| **Audit** | Session (and optional on-disk) log of what moved where |
+
+Full Disk Access is requested only when needed (e.g. Empty Trash), with a clear explanation.
+
 ## Status
 
-Phases 1–9 complete: scan → preview → Trash-safe clean, Dev mode, selection/history/Settings, reclaim rules (including Phase 9 cache expansion), **Browse disk**, notarized release scripts, and safety unit tests.
+Phases **1–9** shipped: scan → preview → Trash-safe clean, Dev mode, selection/history/Settings, broad reclaim rules, **Browse disk**, notarized release scripts, and safety unit tests.
 
-Phases **10–11** planned: orphaned-app leftovers, then APFS sizing + large-list Detail UX (see [PRODUCT.md](PRODUCT.md) Phase 9+).
+Phases **10–11** planned: orphaned-app leftovers, then APFS sizing + large-list Detail UX. Details in [PRODUCT.md](PRODUCT.md).
 
 ## Requirements
 
@@ -43,7 +77,7 @@ xcodebuild test -scheme MacSweeper -destination 'platform=macOS'
 
 ## Distribution (notarized direct download)
 
-MacSweeper is distributed as a free, notarized `.app` (not Mac App Store). Requires an Apple Developer ID Application certificate and App Store Connect API key (or Apple ID) for notarization.
+MacSweeper ships as a free, notarized `.app` (not Mac App Store). Requires an Apple Developer ID Application certificate and App Store Connect API key (or Apple ID) for notarization.
 
 ```bash
 # Set once in your shell / CI secrets (never commit):
