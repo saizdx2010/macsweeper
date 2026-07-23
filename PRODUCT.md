@@ -12,7 +12,7 @@ Most people pay for CleanMyMac for the **UI and confidence**, not magic cleanup 
 2. **Preview** — show what will be removed, with sizes and risk level
 3. **Clean safely** — move to Trash by default, never surprise-delete
 
-No feature bloat. No scare tactics. No subscription.
+No feature bloat. No scare tactics. Free forever — no subscription, no tip jar.
 
 ## What We're NOT Building
 
@@ -290,12 +290,12 @@ In-app copy: *"We need this to empty Trash. Files never leave your Mac."*
 | **4** | Dev mode (`node_modules`, Docker, Homebrew) — opt-in section | +2 weeks |
 | **5** | Selection & trust polish: per-item checkboxes, Downloads filters, history, Settings | Done |
 | **6** | Broader reclaim rules + custom Dev scan folders (still Trash-safe / Manual for brew·Docker) | Done |
-| **7** | ncdu-style disk browse / treemap (“where did my space go?”) | TBD |
-| **8** | Ship & sustain: notarized `.app` (or MAS), tip jar, safety tests | TBD |
+| **7** | ncdu-style disk browse (“where did my space go?”) — list drill-down, rule jumps | Done |
+| **8** | Ship & sustain: notarized `.app`, safety tests (free forever) | Done |
 
 ### High-ROI priorities (post Phase 4)
 
-These three ideas finish the clean loop for real users. Prefer them over treemap or distribution polish until they ship.
+These three ideas finished the clean loop for real users (Phases 5–6). Phase 7 browse and Phase 8 shipping followed.
 
 | Idea | Why users care | Phase |
 |------|----------------|-------|
@@ -317,7 +317,7 @@ These three ideas finish the clean loop for real users. Prefer them over treemap
 - Detail supports per-item selection for list/discovery categories (Downloads, Mail, `node_modules`, etc.).
 - Downloads/Mail Detail: age filters (>30 / >90 days) and size filters (>100 MB / >1 GB) plus Select/Deselect visible.
 - Cleanup history is viewable in-app; optional persistence across launches (Settings).
-- Settings gear: Dev mode default, custom Dev folders, history toggle, tip-jar placeholder.
+- Settings gear: Dev mode default, custom Dev folders, history toggle.
 
 **Phase 6 decisions:**
 
@@ -326,9 +326,21 @@ These three ideas finish the clean loop for real users. Prefer them over treemap
 - Custom Dev folders via Settings (bookmark once; must stay under home).
 - Docker / deep brew remain Manual guides only.
 
-**Phase 7 (Later):** ncdu-style browse / treemap over home or a chosen folder; optional jump from a large path into cleanup rules. Not on the critical path — ship after High-ROI items feel finished.
+**Phase 7 decisions:**
 
-**Phase 8 (Later):** notarized direct download vs Mac App Store; tip jar once the clean loop feels trustworthy; unit tests around allowlists, exclusions, and Trash moves.
+- Home secondary CTA: “Browse disk” (Scan remains primary).
+- ncdu-style **list drill-down** only — size-sorted children + proportional bars; no visual treemap canvas.
+- Root defaults to `~`; Choose folder… must stay under home.
+- One-level listing with cancelable progressive sizing; packages (`.app`) are opaque.
+- **Cleanable** badge jumps to an existing cleanup rule Detail when a scan covers the path; otherwise prompts to scan. Never trash arbitrary browse folders.
+- Sizes reuse allocated-size + hard-link dedupe within the current folder walk; labeled approximate.
+
+**Phase 8 decisions:**
+
+- Distribution: **notarized direct download** (not Mac App Store); app stays non-sandboxed for FDA empty-Trash.
+- Free forever — no tip jar, no subscription.
+- Unit tests cover allowlists/exclusions, `RunningAppSafety`, and Trash move/restore.
+- Release via Developer ID + `notarytool` + staple scripts (manual first; CI optional later).
 
 ### Phase 1 non-goals
 
@@ -341,7 +353,7 @@ These three ideas finish the clean loop for real users. Prefer them over treemap
 
 | | CleanMyMac | MacSweeper |
 |---|------------|------------|
-| Price | ~$40/year | Free (tip jar later) |
+| Price | ~$40/year | Free forever |
 | Features | Everything + kitchen sink | 3 clear actions |
 | Transparency | Black-box cleaning | Shows every path |
 | Marketing | Aggressive upsells | Calm, honest UI |
@@ -360,9 +372,9 @@ These three ideas finish the clean loop for real users. Prefer them over treemap
 ## Open Questions
 
 - [ ] App name finalization (MacSweeper, TidyMac, Sweep, ClearDesk?)
-- [ ] Distribution: notarized direct download vs Mac App Store? (Phase 8)
-- [ ] Monetization timing: free forever vs tip jar after High-ROI polish? (Phase 8)
-- [ ] Code signing / notarization setup for distribution (Phase 8)
+- [x] Distribution: notarized direct download (not Mac App Store) (Phase 8)
+- [x] Monetization: free forever (no tip jar, no subscription)
+- [x] Code signing / notarization setup for distribution (Phase 8)
 - [x] Persist audit log across launches — optional via Settings “Keep cleanup history” (Phase 5)
 
 ## License

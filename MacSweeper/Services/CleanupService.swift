@@ -82,9 +82,9 @@ actor CleanupService {
         "Pods",
     ]
 
-    init(fileManager: FileManager = .default) {
+    init(fileManager: FileManager = .default, homeDirectory: String = NSHomeDirectory()) {
         self.fileManager = fileManager
-        self.homeDirectory = NSHomeDirectory()
+        self.homeDirectory = (homeDirectory as NSString).standardizingPath
     }
 
     /// Moves paths to Trash and/or permanently empties Trash when selected.
@@ -287,7 +287,8 @@ actor CleanupService {
 
     // MARK: - Safety
 
-    private func isAllowedToTrash(_ path: String) -> Bool {
+    /// Whether a path may be moved to Trash (home-only allowlist + protected prefixes).
+    func isAllowedToTrash(_ path: String) -> Bool {
         let standardized = (path as NSString).standardizingPath
         guard standardized.hasPrefix(homeDirectory + "/") || standardized == homeDirectory + "/.Trash" else {
             // Allow ~/.Trash itself only for empty-trash action (handled separately).

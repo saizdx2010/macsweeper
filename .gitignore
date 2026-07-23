@@ -40,5 +40,8 @@ Icon?
 .env
 *.pem
 
+# Release artifacts
+dist/
+
 # Local tooling (download XcodeGen via brew or release)
 .tools/

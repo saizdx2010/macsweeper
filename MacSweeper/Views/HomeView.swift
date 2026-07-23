@@ -63,6 +63,12 @@ struct HomeView: View {
                         SettingsView(path: $path)
                     case .history:
                         CleanupHistoryView(path: $path)
+                    case .browse(let rootPath):
+                        DiskBrowseView(
+                            session: scanSession,
+                            rootPath: rootPath,
+                            path: $path
+                        )
                     }
                 }
         }
@@ -203,6 +209,11 @@ struct HomeView: View {
             )
             .frame(maxWidth: 280)
             .padding(.top, 4)
+
+            SecondaryCTAButton(title: "Browse disk", expands: true) {
+                path.append(AppRoute.browse(rootPath: nil))
+            }
+            .frame(maxWidth: 280)
 
             if !hasFullDiskAccess {
                 VStack(alignment: alignment, spacing: 4) {
@@ -383,6 +394,7 @@ enum AppRoute: Hashable {
     case clean([ScanResult])
     case settings
     case history
+    case browse(rootPath: String?)
 }
 
 #Preview {

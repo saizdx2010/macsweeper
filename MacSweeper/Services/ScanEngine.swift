@@ -24,17 +24,6 @@ actor ScanEngine {
         ".Trash",
     ]
 
-    private let sizeKeys: Set<URLResourceKey> = [
-        .isRegularFileKey,
-        .isDirectoryKey,
-        .isSymbolicLinkKey,
-        .totalFileAllocatedSizeKey,
-        .fileAllocatedSizeKey,
-        .fileSizeKey,
-        .linkCountKey,
-        .contentModificationDateKey,
-    ]
-
     init(bundle: Bundle = .main, fileManager: FileManager = .default) {
         self.rulesURL = bundle.url(forResource: "cleanup-rules", withExtension: "json")
         self.fileManager = fileManager
@@ -226,7 +215,7 @@ actor ScanEngine {
         do {
             children = try fileManager.contentsOfDirectory(
                 at: directoryURL,
-                includingPropertiesForKeys: Array(sizeKeys),
+                includingPropertiesForKeys: Array(DiskMeasurement.sizeKeys),
                 options: [.skipsHiddenFiles]
             )
         } catch {
@@ -333,7 +322,7 @@ actor ScanEngine {
             do {
                 contents = try fileManager.contentsOfDirectory(
                     at: directoryURL,
-                    includingPropertiesForKeys: Array(sizeKeys),
+                    includingPropertiesForKeys: Array(DiskMeasurement.sizeKeys),
                     options: directoryOptions
                 )
             } catch {
@@ -553,73 +542,11 @@ actor ScanEngine {
         at url: URL,
         seenHardLinks: inout Set<FileIdentity>
     ) throws -> Int64 {
-        let values = try url.resourceValues(forKeys: sizeKeys)
-
-        if values.isDirectory != true {
-            return allocatedBytes(forFileAt: url, values: values, seenHardLinks: &seenHardLinks)
-        }
-
-        guard let enumerator = fileManager.enumerator(
+        try DiskMeasurement.measureAllocatedSize(
             at: url,
-            includingPropertiesForKeys: Array(sizeKeys),
-            options: [.skipsPackageDescendants],
-            errorHandler: { _, _ in true }
-        ) else {
-            return 0
-        }
-
-        var total: Int64 = 0
-        var filesVisited = 0
-        for case let fileURL as URL in enumerator {
-            filesVisited += 1
-            if filesVisited.isMultiple(of: 256) {
-                try Task.checkCancellation()
-            }
-            let fileValues = try fileURL.resourceValues(forKeys: sizeKeys)
-            guard fileValues.isRegularFile == true else { continue }
-            total += allocatedBytes(forFileAt: fileURL, values: fileValues, seenHardLinks: &seenHardLinks)
-        }
-        return total
-    }
-
-    private func allocatedBytes(
-        forFileAt url: URL,
-        values: URLResourceValues,
-        seenHardLinks: inout Set<FileIdentity>
-    ) -> Int64 {
-        if let identity = FileIdentity(url: url),
-           let linkCount = values.linkCount,
-           linkCount > 1 {
-            if seenHardLinks.contains(identity) {
-                return 0
-            }
-            seenHardLinks.insert(identity)
-        }
-
-        if let allocated = values.totalFileAllocatedSize ?? values.fileAllocatedSize {
-            return Int64(allocated)
-        }
-        // Fallback: st_blocks is in 512-byte units (closer to reclaimable space).
-        if let identity = FileIdentity(url: url) {
-            return identity.blockBytes
-        }
-        return Int64(values.fileSize ?? 0)
-    }
-}
-
-/// Volume device + inode identity for hard-link deduplication.
-private struct FileIdentity: Hashable {
-    let device: UInt64
-    let inode: UInt64
-    let blockBytes: Int64
-
-    init?(url: URL) {
-        var status = stat()
-        let result = lstat(url.path, &status)
-        guard result == 0 else { return nil }
-        device = UInt64(status.st_dev)
-        inode = UInt64(status.st_ino)
-        blockBytes = Int64(status.st_blocks) * 512
+            fileManager: fileManager,
+            seenHardLinks: &seenHardLinks
+        )
     }
 }
 

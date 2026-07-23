@@ -1,12 +1,12 @@
 # MacSweeper
 
-A lightweight, native macOS disk cleaner — scan, preview, clean safely. No subscriptions, no scare tactics.
+A lightweight, native macOS disk cleaner — scan, preview, clean safely. No subscriptions, no scare tactics. Free forever.
 
 Inspired by [ncdu](https://dev.yorhel.nl/ncdu) and [mac-cleanup-go](https://github.com/2ykwang/mac-cleanup-go). Full product spec: [PRODUCT.md](PRODUCT.md).
 
 ## Status
 
-Phase 4: opt-in Dev mode — discover `node_modules` / virtualenvs under common project roots, Homebrew cache cleanup, and Manual Docker / Homebrew guidance.
+Phases 1–8 complete: scan → preview → Trash-safe clean, Dev mode, selection/history/Settings, broader reclaim rules, **Browse disk**, notarized direct-download release scripts, and safety unit tests.
 
 ## Requirements
 
@@ -32,15 +32,38 @@ xcodegen generate
 xcodebuild -scheme MacSweeper -configuration Debug -destination 'platform=macOS' build
 ```
 
+## Test
+
+```bash
+xcodegen generate
+xcodebuild test -scheme MacSweeper -destination 'platform=macOS'
+```
+
+## Distribution (notarized direct download)
+
+MacSweeper is distributed as a free, notarized `.app` (not Mac App Store). Requires an Apple Developer ID Application certificate and App Store Connect API key (or Apple ID) for notarization.
+
+```bash
+# Set once in your shell / CI secrets (never commit):
+export DEVELOPMENT_TEAM=YOUR_TEAM_ID
+export NOTARY_PROFILE=MacSweeper-notary   # keychain profile from `xcrun notarytool store-credentials`
+
+./scripts/release.sh
+```
+
+The script archives a Release build, notarizes, staples, and writes a zip under `dist/`.
+
 ## Project layout
 
 ```
 MacSweeper/
 ├── App/           # SwiftUI entry
-├── Views/         # Home, Results, Detail, Clean
+├── Views/         # Home, Browse, Results, Detail, Clean, Settings
 ├── Models/        # Categories, results, risk levels
-├── Services/      # Scan, cleanup, audit, disk space, Full Disk Access
+├── Services/      # Scan, browse, cleanup, audit, disk space, Full Disk Access
 └── Resources/     # cleanup-rules.json
+MacSweeperTests/   # Safety unit tests
+scripts/           # Notarized release
 ```
 
 ## License

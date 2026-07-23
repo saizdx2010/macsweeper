@@ -89,19 +89,6 @@ struct SettingsView: View {
                             .buttonStyle(.plain)
                         }
                     }
-
-                    MSCard {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("SUPPORT")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            Text("Tip jar")
-                                .font(.body.weight(.medium))
-                            Text("Coming later — MacSweeper stays free while the clean loop earns trust.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
                 }
                 .padding(MSTheme.pagePadding)
             }

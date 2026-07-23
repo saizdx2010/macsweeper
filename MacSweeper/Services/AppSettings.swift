@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 import UniformTypeIdentifiers
 
-/// User preferences: Dev roots, history retention, and future tip-jar hooks.
+/// User preferences: Dev roots and history retention.
 @MainActor
 final class AppSettings: ObservableObject {
     struct DevRoot: Identifiable, Equatable, Hashable {

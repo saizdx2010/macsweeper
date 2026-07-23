@@ -19,7 +19,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.macsweeper.app
         PRODUCT_NAME: MacSweeper
-        MARKETING_VERSION: "0.1.0"
+        MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: MacSweeper
@@ -29,5 +29,20 @@ targets:
         COMBINE_HIDPI_IMAGES: YES
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_STYLE: Automatic
+        # Override locally: export DEVELOPMENT_TEAM=XXXXXXXXXX before xcodegen / xcodebuild
+        DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
     scheme:
-      testTargets: []
+      testTargets:
+        - MacSweeperTests
+  MacSweeperTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: MacSweeperTests
+    dependencies:
+      - target: MacSweeper
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.macsweeper.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
