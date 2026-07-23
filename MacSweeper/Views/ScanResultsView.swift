@@ -12,6 +12,17 @@ struct ScanResultsView: View {
         results.filter(\.isSelected).reduce(0) { $0 + $1.totalBytes }
     }
 
+    private var totalBytes: Int64 {
+        results.reduce(0) { $0 + $1.totalBytes }
+    }
+
+    private var titleText: String {
+        if isScanning || errorMessage != nil || results.isEmpty {
+            return "Results"
+        }
+        return "Found \(ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file))"
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             if isScanning {
@@ -27,7 +38,7 @@ struct ScanResultsView: View {
                 ContentUnavailableView(
                     "No reclaimable space found",
                     systemImage: "tray",
-                    description: Text("Loaded \(loadedRuleCount) rules. Phase 1 will measure real sizes.")
+                    description: Text("Checked \(loadedRuleCount) rules under your home folder. Nothing matched with measurable size.")
                 )
             } else {
                 List {
@@ -42,7 +53,7 @@ struct ScanResultsView: View {
                                     Text(result.category.label)
                                     Text(result.category.risk.displayName)
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(riskColor(result.category.risk))
                                 }
 
                                 Spacer()
@@ -68,9 +79,22 @@ struct ScanResultsView: View {
             }
             .padding()
         }
-        .navigationTitle("Results")
+        .navigationTitle(titleText)
         .task {
             await runScan()
+        }
+    }
+
+    private func riskColor(_ risk: RiskLevel) -> Color {
+        switch risk {
+        case .safe:
+            return .secondary
+        case .moderate:
+            return .orange
+        case .risky:
+            return .red.opacity(0.8)
+        case .manual:
+            return .secondary
         }
     }
 
@@ -83,6 +107,8 @@ struct ScanResultsView: View {
             let categories = try await engine.loadCategories()
             loadedRuleCount = categories.count
             results = try await engine.scan()
+        } catch is CancellationError {
+            // View disappeared mid-scan.
         } catch {
             errorMessage = error.localizedDescription
         }

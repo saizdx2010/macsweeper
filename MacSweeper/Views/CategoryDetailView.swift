@@ -14,20 +14,18 @@ struct CategoryDetailView: View {
 
             Section {
                 if result.paths.isEmpty {
-                    Text("No paths measured yet (scaffold).")
+                    Text("No paths found for this category.")
                         .foregroundStyle(.secondary)
-                    ForEach(result.category.paths, id: \.self) { path in
-                        Text(path)
-                            .font(.system(.body, design: .monospaced))
-                    }
                 } else {
                     ForEach(result.paths) { item in
-                        HStack {
-                            Text(item.path)
+                        HStack(alignment: .top) {
+                            Text(item.displayPath)
                                 .font(.system(.body, design: .monospaced))
-                            Spacer()
+                                .textSelection(.enabled)
+                            Spacer(minLength: 12)
                             Text(ByteCountFormatter.string(fromByteCount: item.byteCount, countStyle: .file))
                                 .foregroundStyle(.secondary)
+                                .monospacedDigit()
                         }
                     }
                 }
@@ -53,7 +51,12 @@ struct CategoryDetailView: View {
                     risk: .safe,
                     description: "Temporary files; Chrome rebuilds these automatically."
                 ),
-                paths: [],
+                paths: [
+                    ScannedPath(
+                        path: NSHomeDirectory() + "/Library/Caches/Google/Chrome",
+                        byteCount: 980_000_000
+                    )
+                ],
                 isSelected: true
             )
         )

@@ -6,7 +6,7 @@ Inspired by [ncdu](https://dev.yorhel.nl/ncdu) and [mac-cleanup-go](https://gith
 
 ## Status
 
-Scaffold only. Phase 1 (real scan + preview) is next.
+Phase 1: real home-folder scan via JSON rules, sized checkbox results, and category detail. Trash moves land in Phase 2.
 
 ## Requirements
 
@@ -39,7 +39,7 @@ MacSweeper/
 ├── App/           # SwiftUI entry
 ├── Views/         # Home, Results, Detail, Clean
 ├── Models/        # Categories, results, risk levels
-├── Services/      # Scan, cleanup, audit, disk space (stubs)
+├── Services/      # Scan engine (live), cleanup/audit stubs (Phase 2)
 └── Resources/     # cleanup-rules.json
 ```
 
