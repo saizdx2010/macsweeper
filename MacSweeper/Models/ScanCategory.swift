@@ -40,28 +40,30 @@ struct ScanCategory: Identifiable, Codable, Hashable {
     /// SF Symbol used in results, detail, and clean summary rows.
     var sfSymbolName: String {
         switch id {
-        case "browser_chrome_cache", "browser_safari_cache", "browser_firefox_cache", "browser_edge_cache":
+        case "browser_chrome_cache", "browser_safari_cache", "browser_firefox_cache", "browser_edge_cache",
+             "browser_brave_cache", "browser_opera_cache":
             return "globe"
         case "user_app_caches", "font_caches", "quicklook_thumbnails", "itunes_podcast_cache", "core_simulator_caches",
-             "slack_cache", "zoom_cache", "discord_cache", "spotify_cache", "adobe_temp", "electron_app_caches":
+             "slack_cache", "zoom_cache", "discord_cache", "spotify_cache", "adobe_temp", "electron_app_caches",
+             "jetbrains_caches", "messaging_app_caches", "steam_caches":
             return "internaldrive"
         case "user_logs":
             return "doc.text"
-        case "xcode_derived_data", "xcode_archives", "xcode_ios_device_support":
+        case "xcode_derived_data", "xcode_archives", "xcode_ios_device_support", "xcode_other_device_support":
             return "hammer"
         case "mail_downloads", "old_downloads":
             return "arrow.down.circle"
         case "empty_trash":
             return "trash"
-        case "dev_node_modules", "dev_npm_pnpm_yarn_caches":
+        case "dev_node_modules", "dev_npm_pnpm_yarn_caches", "dev_bun_cache", "dev_playwright_cypress":
             return "shippingbox"
-        case "dev_venvs", "dev_pip_cache":
+        case "dev_venvs", "dev_pip_cache", "dev_bundler_cache":
             return "chevron.left.forwardslash.chevron.right"
-        case "dev_cargo_target", "dev_gradle", "dev_cocoapods":
+        case "dev_cargo_target", "dev_gradle", "dev_cocoapods", "dev_go_caches", "dev_maven_cache", "dev_carthage_cache":
             return "hammer"
         case "homebrew_caches", "homebrew_cleanup":
             return "mug"
-        case "docker_reclaim":
+        case "docker_reclaim", "simulator_unavailable_cleanup":
             return "shippingbox"
         default:
             return "folder"

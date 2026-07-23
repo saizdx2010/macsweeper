@@ -6,7 +6,9 @@ Inspired by [ncdu](https://dev.yorhel.nl/ncdu) and [mac-cleanup-go](https://gith
 
 ## Status
 
-Phases 1–8 complete: scan → preview → Trash-safe clean, Dev mode, selection/history/Settings, broader reclaim rules, **Browse disk**, notarized direct-download release scripts, and safety unit tests.
+Phases 1–9 complete: scan → preview → Trash-safe clean, Dev mode, selection/history/Settings, reclaim rules (including Phase 9 cache expansion), **Browse disk**, notarized release scripts, and safety unit tests.
+
+Phases **10–11** planned: orphaned-app leftovers, then APFS sizing + large-list Detail UX (see [PRODUCT.md](PRODUCT.md) Phase 9+).
 
 ## Requirements
 

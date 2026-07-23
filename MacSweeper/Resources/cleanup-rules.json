@@ -43,6 +43,29 @@
     "description": "Temporary files; Edge rebuilds these automatically."
   },
   {
+    "id": "browser_brave_cache",
+    "label": "Brave cache",
+    "paths": [
+      "~/Library/Caches/com.brave.Browser",
+      "~/Library/Application Support/BraveSoftware/Brave-Browser/Default/Service Worker/CacheStorage",
+      "~/Library/Application Support/BraveSoftware/Brave-Browser/Default/Code Cache"
+    ],
+    "risk": "safe",
+    "description": "Temporary files; Brave rebuilds these automatically."
+  },
+  {
+    "id": "browser_opera_cache",
+    "label": "Opera cache",
+    "paths": [
+      "~/Library/Caches/com.operasoftware.Opera",
+      "~/Library/Application Support/com.operasoftware.Opera/Cache",
+      "~/Library/Application Support/com.operasoftware.Opera/Code Cache",
+      "~/Library/Application Support/com.operasoftware.Opera/GPUCache"
+    ],
+    "risk": "safe",
+    "description": "Temporary files; Opera rebuilds these automatically."
+  },
+  {
     "id": "slack_cache",
     "label": "Slack cache",
     "paths": [
@@ -109,6 +132,10 @@
       "~/Library/Caches/com.figma.Desktop",
       "~/Library/Caches/com.notion.id",
       "~/Library/Caches/company.thebrowser.Browser",
+      "~/Library/Caches/com.linear",
+      "~/Library/Caches/md.obsidian",
+      "~/Library/Caches/com.loom.desktop",
+      "~/Library/Caches/com.electron.miro",
       "~/Library/Application Support/Code/Cache",
       "~/Library/Application Support/Code/CachedData",
       "~/Library/Application Support/Code/Code Cache",
@@ -116,10 +143,58 @@
       "~/Library/Application Support/Figma/Cache",
       "~/Library/Application Support/Figma/Code Cache",
       "~/Library/Application Support/Notion/Cache",
-      "~/Library/Application Support/Notion/Code Cache"
+      "~/Library/Application Support/Notion/Code Cache",
+      "~/Library/Application Support/Linear/Cache",
+      "~/Library/Application Support/Linear/Code Cache",
+      "~/Library/Application Support/Linear/GPUCache",
+      "~/Library/Application Support/obsidian/Cache",
+      "~/Library/Application Support/obsidian/Code Cache",
+      "~/Library/Application Support/obsidian/GPUCache",
+      "~/Library/Application Support/Loom/Cache",
+      "~/Library/Application Support/Loom/Code Cache",
+      "~/Library/Application Support/Miro/Cache",
+      "~/Library/Application Support/Miro/Code Cache"
     ],
     "risk": "safe",
-    "description": "Common Electron app caches (VS Code, Figma, Notion, Arc). Rebuild on next launch."
+    "description": "Common Electron app caches (VS Code, Figma, Notion, Arc, Linear, Obsidian, Loom, Miro). Rebuild on next launch."
+  },
+  {
+    "id": "jetbrains_caches",
+    "label": "JetBrains caches",
+    "paths": [
+      "~/Library/Caches/JetBrains",
+      "~/Library/Logs/JetBrains"
+    ],
+    "risk": "safe",
+    "description": "IntelliJ / PyCharm / WebStorm / Rider caches and logs. IDEs rebuild indexes on next open."
+  },
+  {
+    "id": "messaging_app_caches",
+    "label": "Messaging app caches",
+    "paths": [
+      "~/Library/Caches/ru.keepcoder.Telegram",
+      "~/Library/Group Containers/6N38VWS5BX.ru.keepcoder.Telegram/stable/appstore/caches",
+      "~/Library/Caches/net.whatsapp.WhatsApp",
+      "~/Library/Caches/com.microsoft.teams2",
+      "~/Library/Caches/com.microsoft.teams",
+      "~/Library/Application Support/Microsoft/Teams/Cache",
+      "~/Library/Application Support/Microsoft/Teams/Code Cache",
+      "~/Library/Application Support/Microsoft/Teams/GPUCache"
+    ],
+    "risk": "safe",
+    "description": "Telegram, WhatsApp, and Teams regenerable caches. Media may re-download when you open chats again."
+  },
+  {
+    "id": "steam_caches",
+    "label": "Steam caches",
+    "paths": [
+      "~/Library/Caches/com.valvesoftware.steam",
+      "~/Library/Application Support/Steam/appcache",
+      "~/Library/Application Support/Steam/htmlcache",
+      "~/Library/Application Support/Steam/shadercache"
+    ],
+    "risk": "safe",
+    "description": "Steam app, HTML, and shader caches. Games may rebuild shaders on next launch."
   },
   {
     "id": "user_app_caches",
@@ -164,6 +239,16 @@
     "paths": ["~/Library/Developer/Xcode/iOS DeviceSupport"],
     "risk": "safe",
     "description": "Symbol files for connected iOS devices. Xcode re-downloads when needed."
+  },
+  {
+    "id": "xcode_other_device_support",
+    "label": "watchOS / tvOS DeviceSupport",
+    "paths": [
+      "~/Library/Developer/Xcode/watchOS DeviceSupport",
+      "~/Library/Developer/Xcode/tvOS DeviceSupport"
+    ],
+    "risk": "safe",
+    "description": "Symbol files for connected watchOS and tvOS devices. Xcode re-downloads when needed."
   },
   {
     "id": "core_simulator_caches",
@@ -354,5 +439,78 @@
     "group": "dev",
     "guide_command": "docker system prune -a",
     "description": "Docker Desktop data. Most reclaimable space lives in the VM disk — use docker system prune. MacSweeper does not run Docker commands."
+  },
+  {
+    "id": "dev_playwright_cypress",
+    "label": "Playwright / Cypress caches",
+    "paths": [
+      "~/Library/Caches/ms-playwright",
+      "~/Library/Caches/Cypress",
+      "~/.cache/ms-playwright",
+      "~/.cache/Cypress",
+      "~/.cache/puppeteer"
+    ],
+    "risk": "moderate",
+    "group": "dev",
+    "description": "Browser binaries and caches for Playwright, Cypress, and Puppeteer. Next test run re-downloads what’s needed."
+  },
+  {
+    "id": "dev_go_caches",
+    "label": "Go build caches",
+    "paths": [
+      "~/Library/Caches/go-build",
+      "~/.cache/go-build"
+    ],
+    "risk": "moderate",
+    "group": "dev",
+    "description": "Go compiler build cache. Next go build regenerates it. Module downloads under GOPATH/pkg are not included."
+  },
+  {
+    "id": "dev_maven_cache",
+    "label": "Maven cache",
+    "paths": ["~/.m2/repository"],
+    "risk": "moderate",
+    "group": "dev",
+    "description": "Local Maven artifact repository. Next build re-downloads dependencies."
+  },
+  {
+    "id": "dev_bun_cache",
+    "label": "Bun cache",
+    "paths": [
+      "~/Library/Caches/bun",
+      "~/.bun/install/cache"
+    ],
+    "risk": "moderate",
+    "group": "dev",
+    "description": "Bun package install cache. Next bun install re-fetches packages."
+  },
+  {
+    "id": "dev_carthage_cache",
+    "label": "Carthage cache",
+    "paths": ["~/Library/Caches/org.carthage.CarthageKit"],
+    "risk": "moderate",
+    "group": "dev",
+    "description": "Carthage downloaded frameworks cache. carthage bootstrap re-fetches as needed."
+  },
+  {
+    "id": "dev_bundler_cache",
+    "label": "Bundler / RubyGems cache",
+    "paths": [
+      "~/Library/Caches/RubyGems",
+      "~/.bundle/cache",
+      "~/.gem/cache"
+    ],
+    "risk": "moderate",
+    "group": "dev",
+    "description": "Ruby gem download caches. bundle install / gem install re-fetches as needed."
+  },
+  {
+    "id": "simulator_unavailable_cleanup",
+    "label": "Unavailable simulators",
+    "paths": ["~/Library/Developer/CoreSimulator"],
+    "risk": "manual",
+    "group": "dev",
+    "guide_command": "xcrun simctl delete unavailable",
+    "description": "Removes simulator runtimes and devices that are no longer available. Run in Terminal — MacSweeper does not execute simctl. Review carefully if you keep old device data."
   }
 ]

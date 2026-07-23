@@ -22,7 +22,7 @@ No feature bloat. No scare tactics. Free forever — no subscription, no tip jar
 - "RAM cleaner" or fake optimization
 - System `/private/var` deep cleaning
 - Launch agents / login items management
-- Orphaned app / leftover preference sweeping (v1)
+- Orphaned app / leftover preference sweeping (deferred to Phase 10)
 
 ## MVP Features
 
@@ -237,7 +237,7 @@ Rules live in JSON, not hardcoded Swift:
 
 Start with ~15–20 high-value, low-risk rules. Expand over time.
 
-**Size reporting (v1):** Use allocated size via `FileManager` / `URLResourceValues` (naive walk). APFS clone / sparse / hard-link accuracy is a later improvement; label sizes as approximate if needed.
+**Size reporting (v1):** Use allocated size via `FileManager` / `URLResourceValues` (naive walk). APFS clone / sparse accuracy is Phase 11; hard-link dedupe is already applied. Label sizes as approximate if needed.
 
 **Concurrency:** Scan on a background queue; stream category results to the UI; support cancel.
 
@@ -292,6 +292,9 @@ In-app copy: *"We need this to empty Trash. Files never leave your Mac."*
 | **6** | Broader reclaim rules + custom Dev scan folders (still Trash-safe / Manual for brew·Docker) | Done |
 | **7** | ncdu-style disk browse (“where did my space go?”) — list drill-down, rule jumps | Done |
 | **8** | Ship & sustain: notarized `.app`, safety tests (free forever) | Done |
+| **9** | Broader regenerable cache / Manual rules (Brave, JetBrains, messaging, Playwright, etc.) | Done |
+| **10** | Orphaned-app leftovers (prefs / Application Support for uninstalled apps) | Planned |
+| **11** | APFS-aware sizing + large-list Detail UX (virtualized / show-more / search) | Planned |
 
 ### High-ROI priorities (post Phase 4)
 
@@ -302,6 +305,20 @@ These three ideas finished the clean loop for real users (Phases 5–6). Phase 7
 | **Per-item selection + Downloads age/size filters** | Avoid “clean half my Downloads by accident” anxiety | **5** (Done) |
 | **Custom Dev scan roots** | Real projects aren’t only under `~/Developer` | **6** (Done) |
 | **In-app cleanup history** | Makes the Undo / Trash promise feel durable across days | **5** (Done) |
+
+### Phase 9+ (post-ship nice-to-haves)
+
+Chosen first track: **broader cache rules** (cheap JSON wins, same Safe/Moderate/Manual engine). Then orphans, then trust/UX polish.
+
+| Phase | Scope | Notes |
+|-------|--------|-------|
+| **9** | Grow `cleanup-rules.json` toward mac-cleanup-go coverage | Brave/Opera, JetBrains, Telegram/WhatsApp/Teams, Steam, watchOS/tvOS DeviceSupport, Playwright/Cypress/Puppeteer, Go/Maven/Bun/Carthage/Bundler caches; Manual `xcrun simctl delete unavailable`. Still Trash-first; no shell-out. |
+| **10** | Orphaned-app leftover sweeping (Mole-inspired) | Prefs / Application Support / caches for apps no longer in `/Applications` or `~/Applications`. Risk **Moderate/Risky**, unchecked. Keep hard exclusions (Documents, profiles, keychains). Never default-on Safe. |
+| **11** | APFS-aware sizing + large-list Detail UX | Clone/sparse accounting so sizes match Finder more closely; Detail beyond the 200-path cap (virtualized list, show more, search/filter). |
+
+**Secondary (after 9–11, packaging polish):** cleanup report export (CSV/Markdown), opt-in reclaim reminders (not menu-bar monitoring), Sparkle self-update for the notarized `.app`, accessibility/localization, CI notarization.
+
+**Still out of scope:** treemap, brew/Docker shell-out, paths outside `~`, sudo/system cleans, malware, RAM theater, live menu-bar monitoring.
 
 **Phase 4 decisions:**
 
@@ -342,6 +359,14 @@ These three ideas finished the clean loop for real users (Phases 5–6). Phase 7
 - Unit tests cover allowlists/exclusions, `RunningAppSafety`, and Trash move/restore.
 - Release via Developer ID + `notarytool` + staple scripts (manual first; CI optional later).
 
+**Phase 9 decisions:**
+
+- First post-ship track is **rules expansion**, not orphans or APFS yet.
+- Add Safe regenerable caches: Brave, Opera, JetBrains, messaging (Telegram / WhatsApp / Teams), Steam; expand Electron list (Linear, Obsidian, Loom, Miro); watchOS/tvOS DeviceSupport.
+- Add Dev Moderate caches: Playwright/Cypress/Puppeteer, Go build cache, Maven, Bun, Carthage, Bundler/RubyGems.
+- Add Manual guide: `xcrun simctl delete unavailable` (copy only; no shell-out).
+- Phases 10–11 remain planned as documented under Phase 9+.
+
 ### Phase 1 non-goals
 
 - No Trash moves yet (scan + preview only)
@@ -366,7 +391,7 @@ These three ideas finished the clean loop for real users (Phases 5–6). Phase 7
 |------|----------------|
 | [ncdu](https://dev.yorhel.nl/ncdu) | Fast directory scanning, size-sorted navigation |
 | [mac-cleanup-go](https://github.com/2ykwang/mac-cleanup-go) | Safety levels, preview-first, category coverage |
-| [Mole](https://github.com/tw93/Mole) | Broad cleanup categories, orphaned-app ideas (post-v1) |
+| [Mole](https://github.com/tw93/Mole) | Broad cleanup categories, orphaned-app ideas (Phase 10) |
 | [disky](https://github.com/biliboss/disky) | APFS-aware scanning, Trash-restorable cleanup patterns |
 
 ## Open Questions
