@@ -93,6 +93,10 @@ actor ScanEngine {
     }
 
     private func measureCategory(_ category: ScanCategory) throws -> ScanResult? {
+        if category.action == .emptyTrash {
+            return try measureEmptyTrash(category)
+        }
+
         var scannedPaths: [ScannedPath] = []
         // Hard links can appear under multiple paths; dedupe within a category.
         var seenHardLinks = Set<FileIdentity>()
@@ -111,6 +115,59 @@ actor ScanEngine {
             guard bytes > 0 else { continue }
 
             scannedPaths.append(ScannedPath(path: expanded, byteCount: bytes))
+        }
+
+        guard !scannedPaths.isEmpty else { return nil }
+
+        return ScanResult(
+            category: category,
+            paths: scannedPaths.sorted { $0.byteCount > $1.byteCount },
+            isSelected: category.risk.isSelectedByDefault
+        )
+    }
+
+    /// Lists top-level Trash entries so item counts match what Empty Trash deletes.
+    private func measureEmptyTrash(_ category: ScanCategory) throws -> ScanResult? {
+        var scannedPaths: [ScannedPath] = []
+        var seenHardLinks = Set<FileIdentity>()
+
+        for pathString in category.paths {
+            try Task.checkCancellation()
+
+            let trashPath = expandHome(pathString)
+            var isDirectory: ObjCBool = false
+            guard fileManager.fileExists(atPath: trashPath, isDirectory: &isDirectory),
+                  isDirectory.boolValue
+            else {
+                continue
+            }
+
+            let trashURL = URL(fileURLWithPath: trashPath, isDirectory: true)
+            let contents: [URL]
+            do {
+                contents = try fileManager.contentsOfDirectory(
+                    at: trashURL,
+                    includingPropertiesForKeys: Array(sizeKeys),
+                    options: []
+                )
+            } catch {
+                continue
+            }
+
+            for itemURL in contents {
+                try Task.checkCancellation()
+                var itemIsDirectory: ObjCBool = false
+                guard fileManager.fileExists(atPath: itemURL.path, isDirectory: &itemIsDirectory) else {
+                    continue
+                }
+                let url = URL(
+                    fileURLWithPath: itemURL.path,
+                    isDirectory: itemIsDirectory.boolValue
+                )
+                let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
+                guard bytes > 0 else { continue }
+                scannedPaths.append(ScannedPath(path: url.path, byteCount: bytes))
+            }
         }
 
         guard !scannedPaths.isEmpty else { return nil }

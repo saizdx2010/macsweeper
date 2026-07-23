@@ -21,7 +21,7 @@ actor CleanupService {
         let itemCount: Int
         let moved: [MovedItem]
         let failures: [Failure]
-        /// True when at least one Empty Trash action ran (no undo).
+        /// True when Trash contents were permanently deleted (no undo).
         let emptiedTrash: Bool
 
         static let empty = Outcome(
@@ -73,7 +73,9 @@ actor CleanupService {
 
             if result.category.action == .emptyTrash {
                 let emptyOutcome = try emptyTrashContents(byteHint: result.totalBytes)
-                emptiedTrash = true
+                if emptyOutcome.emptiedTrash {
+                    emptiedTrash = true
+                }
                 emptiedBytes += emptyOutcome.freedBytes
                 emptiedCount += emptyOutcome.itemCount
                 failures.append(contentsOf: emptyOutcome.failures)
@@ -152,8 +154,12 @@ actor CleanupService {
                 itemCount: 0,
                 moved: [],
                 failures: [Failure(path: trashPath, message: error.localizedDescription)],
-                emptiedTrash: true
+                emptiedTrash: false
             )
+        }
+
+        guard !contents.isEmpty else {
+            return .empty
         }
 
         var failures: [Failure] = []
@@ -167,8 +173,24 @@ actor CleanupService {
             }
         }
 
-        // Prefer scan hint when we deleted everything; otherwise leave hint but report count.
-        let freed = failures.isEmpty ? byteHint : 0
+        guard deleted > 0 else {
+            return Outcome(
+                freedBytes: 0,
+                itemCount: 0,
+                moved: [],
+                failures: failures,
+                emptiedTrash: false
+            )
+        }
+
+        // Full success: trust the scan total. Partial: apportion by deleted share.
+        let freed: Int64
+        if failures.isEmpty {
+            freed = max(byteHint, 0)
+        } else {
+            freed = max(byteHint, 0) * Int64(deleted) / Int64(contents.count)
+        }
+
         return Outcome(
             freedBytes: freed,
             itemCount: deleted,

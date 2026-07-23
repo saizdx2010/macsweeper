@@ -53,21 +53,50 @@ final class AuditLogService: ObservableObject {
         }
     }
 
-    func finishClean(moved items: [CleanupService.MovedItem]) {
+    func finishClean(outcome: CleanupService.Outcome) {
+        var items = outcome.moved
+        let movedBytes = items.reduce(Int64(0)) { $0 + $1.byteCount }
+        let emptiedCount = max(0, outcome.itemCount - items.count)
+        let emptiedBytes = max(Int64(0), outcome.freedBytes - movedBytes)
+
+        if outcome.emptiedTrash && emptiedCount > 0 {
+            let trashPath = NSHomeDirectory() + "/.Trash"
+            items.append(
+                CleanupService.MovedItem(
+                    categoryID: "empty_trash",
+                    originalPath: trashPath,
+                    trashURL: URL(fileURLWithPath: trashPath, isDirectory: true),
+                    byteCount: emptiedBytes
+                )
+            )
+        }
+
         guard !items.isEmpty else { return }
 
         record(moved: items)
 
         let summary = SessionSummary(
             date: Date(),
-            freedBytes: items.reduce(0) { $0 + $1.byteCount },
-            itemCount: items.count
+            freedBytes: outcome.freedBytes,
+            itemCount: outcome.itemCount
         )
         lastClean = summary
         defaults.set(summary.date, forKey: lastCleanDateKey)
         defaults.set(Int(summary.freedBytes), forKey: lastCleanBytesKey)
         defaults.set(summary.itemCount, forKey: lastCleanCountKey)
         appendToDiskLog(items: items, summary: summary)
+    }
+
+    func finishClean(moved items: [CleanupService.MovedItem]) {
+        finishClean(
+            outcome: CleanupService.Outcome(
+                freedBytes: items.reduce(0) { $0 + $1.byteCount },
+                itemCount: items.count,
+                moved: items,
+                failures: [],
+                emptiedTrash: false
+            )
+        )
     }
 
     func clearSession() {

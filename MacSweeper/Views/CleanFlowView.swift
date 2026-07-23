@@ -269,22 +269,7 @@ struct CleanFlowView: View {
         do {
             let result = try await cleanup.moveToTrash(results)
             outcome = result
-            if !result.moved.isEmpty {
-                auditLog.finishClean(moved: result.moved)
-            } else if result.emptiedTrash && result.itemCount > 0 {
-                // Record a synthetic audit line for empty trash.
-                let trashPath = NSHomeDirectory() + "/.Trash"
-                auditLog.finishClean(
-                    moved: [
-                        CleanupService.MovedItem(
-                            categoryID: "empty_trash",
-                            originalPath: trashPath,
-                            trashURL: URL(fileURLWithPath: trashPath),
-                            byteCount: result.freedBytes
-                        )
-                    ]
-                )
-            }
+            auditLog.finishClean(outcome: result)
             phase = .done
         } catch is CancellationError {
             phase = .confirm
