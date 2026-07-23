@@ -15,12 +15,16 @@
 		6C10E493BD6E913FD9487BB7 /* ScanEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88BF90177A8C59D9B06421D /* ScanEngine.swift */; };
 		72C038B941B1C89FBAE08E25 /* CategoryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59072EA92D81657972BBA87B /* CategoryDetailView.swift */; };
 		7521D963D8D8FBEDC3BACF28 /* ScanResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 058449D8D50A0F46CDC1C7DD /* ScanResult.swift */; };
+		784E11476CD88E8E4C4B12F0 /* DiskRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72DD82245B6A9DDAD0DFBD87 /* DiskRingView.swift */; };
 		8B1CA678A0A7A1B1FD2A2F92 /* CleanFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42701C072F2FCC237BBE4588 /* CleanFlowView.swift */; };
 		8FA57A142DAC66B8D3CA90B0 /* ScanCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803C24AB453B82AEAE0D8127 /* ScanCategory.swift */; };
 		9F780ED58C215B516D4B6CBB /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A42846CF146659AB5D63326C /* HomeView.swift */; };
+		AA4E6F9C3D3875406C04D112 /* CategoryIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F2D49DB28A2D3A92A08E42 /* CategoryIcon.swift */; };
+		B574918FB686004114B0FCA2 /* RiskBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 695E1D76E98EF6B1C03AE9CE /* RiskBadge.swift */; };
 		B7EACD8A3AF80B09F6017925 /* CleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03415387026D5AE19CD73007 /* CleanupService.swift */; };
 		C5259E6D5AA208680DA72AF5 /* cleanup-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = F74B6AAA7D166E0BA57A1EBE /* cleanup-rules.json */; };
 		CB29CC1C764F0BE791A46E19 /* RiskLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2CCB0413DD8BB7F38B70A5 /* RiskLevel.swift */; };
+		EA6EA457A0E153B80E3270AB /* CategoryRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D342DE9604B618F0E6F7B7F /* CategoryRowView.swift */; };
 		FA1CC27A472F42AB7F8E47BD /* ScanResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FE54B1BAE4E12DD6D53D25 /* ScanResultsView.swift */; };
 /* End PBXBuildFile section */
 
@@ -31,7 +35,10 @@
 		22FE54B1BAE4E12DD6D53D25 /* ScanResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanResultsView.swift; sourceTree = "<group>"; };
 		2A702EAA2CE3FB7AA2AA4DA7 /* DiskSpaceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskSpaceService.swift; sourceTree = "<group>"; };
 		42701C072F2FCC237BBE4588 /* CleanFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanFlowView.swift; sourceTree = "<group>"; };
+		4D342DE9604B618F0E6F7B7F /* CategoryRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryRowView.swift; sourceTree = "<group>"; };
 		59072EA92D81657972BBA87B /* CategoryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryDetailView.swift; sourceTree = "<group>"; };
+		695E1D76E98EF6B1C03AE9CE /* RiskBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiskBadge.swift; sourceTree = "<group>"; };
+		72DD82245B6A9DDAD0DFBD87 /* DiskRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskRingView.swift; sourceTree = "<group>"; };
 		803C24AB453B82AEAE0D8127 /* ScanCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanCategory.swift; sourceTree = "<group>"; };
 		831085989A1B279E4F518F34 /* MacSweeperApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacSweeperApp.swift; sourceTree = "<group>"; };
 		A42846CF146659AB5D63326C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -41,6 +48,7 @@
 		E241B0B13067F89EE9B0D28E /* MacSweeper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacSweeper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F36E0F5DF82E0A4A84314D2E /* AuditLogService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuditLogService.swift; sourceTree = "<group>"; };
 		F74B6AAA7D166E0BA57A1EBE /* cleanup-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "cleanup-rules.json"; sourceTree = "<group>"; };
+		F8F2D49DB28A2D3A92A08E42 /* CategoryIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryIcon.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -63,6 +71,7 @@
 		07A7E5A1EFADCEDFB3C4F969 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				4756721D2111F7AD62B0DBC3 /* Components */,
 				59072EA92D81657972BBA87B /* CategoryDetailView.swift */,
 				42701C072F2FCC237BBE4588 /* CleanFlowView.swift */,
 				A42846CF146659AB5D63326C /* HomeView.swift */,
@@ -89,6 +98,17 @@
 				F74B6AAA7D166E0BA57A1EBE /* cleanup-rules.json */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		4756721D2111F7AD62B0DBC3 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				F8F2D49DB28A2D3A92A08E42 /* CategoryIcon.swift */,
+				4D342DE9604B618F0E6F7B7F /* CategoryRowView.swift */,
+				72DD82245B6A9DDAD0DFBD87 /* DiskRingView.swift */,
+				695E1D76E98EF6B1C03AE9CE /* RiskBadge.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 		6953557CA675AE5737F3D6F5 /* MacSweeper */ = {
@@ -158,7 +178,6 @@
 				};
 			};
 			buildConfigurationList = 9CB306BE8D446BC611B146F9 /* Build configuration list for PBXProject "MacSweeper" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -168,6 +187,7 @@
 			mainGroup = 0207318A949AD78A6CFFCC58;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
+			productRefGroup = 0648C368323BA35AA6ABE033 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -195,12 +215,16 @@
 			files = (
 				4A0A02BFD855CD50F49D0518 /* AuditLogService.swift in Sources */,
 				72C038B941B1C89FBAE08E25 /* CategoryDetailView.swift in Sources */,
+				AA4E6F9C3D3875406C04D112 /* CategoryIcon.swift in Sources */,
+				EA6EA457A0E153B80E3270AB /* CategoryRowView.swift in Sources */,
 				8B1CA678A0A7A1B1FD2A2F92 /* CleanFlowView.swift in Sources */,
 				B7EACD8A3AF80B09F6017925 /* CleanupService.swift in Sources */,
+				784E11476CD88E8E4C4B12F0 /* DiskRingView.swift in Sources */,
 				0C1FB387A02E42218D94E1C2 /* DiskSpaceService.swift in Sources */,
 				15F661DA33832B0DDA768911 /* FullDiskAccessService.swift in Sources */,
 				9F780ED58C215B516D4B6CBB /* HomeView.swift in Sources */,
 				1611116B64EC3BC736FD7407 /* MacSweeperApp.swift in Sources */,
+				B574918FB686004114B0FCA2 /* RiskBadge.swift in Sources */,
 				CB29CC1C764F0BE791A46E19 /* RiskLevel.swift in Sources */,
 				8FA57A142DAC66B8D3CA90B0 /* ScanCategory.swift in Sources */,
 				6C10E493BD6E913FD9487BB7 /* ScanEngine.swift in Sources */,

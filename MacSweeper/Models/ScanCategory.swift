@@ -35,6 +35,34 @@ struct ScanCategory: Identifiable, Codable, Hashable {
     /// Whether this category belongs in the Dev results section.
     var isDevGroup: Bool { group == "dev" }
 
+    /// SF Symbol used in results, detail, and clean summary rows.
+    var sfSymbolName: String {
+        switch id {
+        case "browser_chrome_cache", "browser_safari_cache", "browser_firefox_cache", "browser_edge_cache":
+            return "globe"
+        case "user_app_caches", "font_caches", "quicklook_thumbnails", "itunes_podcast_cache", "core_simulator_caches":
+            return "internaldrive"
+        case "user_logs":
+            return "doc.text"
+        case "xcode_derived_data", "xcode_archives", "xcode_ios_device_support":
+            return "hammer"
+        case "mail_downloads", "old_downloads":
+            return "arrow.down.circle"
+        case "empty_trash":
+            return "trash"
+        case "dev_node_modules":
+            return "shippingbox"
+        case "dev_venvs":
+            return "chevron.left.forwardslash.chevron.right"
+        case "homebrew_caches", "homebrew_cleanup":
+            return "mug"
+        case "docker_reclaim":
+            return "shippingbox"
+        default:
+            return "folder"
+        }
+    }
+
     private enum CodingKeys: String, CodingKey {
         case id, label, paths, risk, description, action, group, scan
         case findNames = "find_names"

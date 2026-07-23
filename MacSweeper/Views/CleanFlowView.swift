@@ -14,6 +14,7 @@ struct CleanFlowView: View {
     @State private var errorMessage: String?
     @State private var isRestoring = false
     @State private var didUndo = false
+    @State private var showDoneCelebration = false
 
     private let cleanup = CleanupService()
 
@@ -35,6 +36,10 @@ struct CleanFlowView: View {
 
     private var includesMoveToTrash: Bool {
         results.contains { $0.category.action != .emptyTrash }
+    }
+
+    private var categoryWord: String {
+        results.count == 1 ? "category" : "categories"
     }
 
     enum Phase {
@@ -93,8 +98,8 @@ struct CleanFlowView: View {
     private var workingLabel: String {
         if isRestoring { return "Restoring…" }
         if includesEmptyTrash && !includesMoveToTrash { return "Emptying Trash…" }
-        if includesEmptyTrash { return "Cleaning…" }
-        return "Moving to Trash…"
+        if includesEmptyTrash { return "Cleaning \(results.count) \(categoryWord)…" }
+        return "Moving \(results.count) \(categoryWord)…"
     }
 
     private var confirmationTitle: String {
@@ -118,7 +123,6 @@ struct CleanFlowView: View {
     }
 
     private var confirmationMessage: String {
-        let categoryWord = results.count == 1 ? "category" : "categories"
         let itemWord = totalItems == 1 ? "item" : "items"
         if includesEmptyTrash && !includesMoveToTrash {
             return "This permanently deletes \(totalItems) \(itemWord) in Trash. It cannot be undone."
@@ -129,13 +133,25 @@ struct CleanFlowView: View {
         return "\(results.count) \(categoryWord) · \(totalItems) \(itemWord). Items move to Trash and can be restored anytime."
     }
 
+    private var confirmHeadline: String {
+        if includesEmptyTrash && !includesMoveToTrash {
+            return "Empty Trash · \(sizeLabel)"
+        }
+        if includesEmptyTrash {
+            return "Clean \(results.count) \(categoryWord) · \(sizeLabel)"
+        }
+        return "Move \(results.count) \(categoryWord) · \(sizeLabel) to Trash"
+    }
+
     private var confirmView: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Ready to clean \(sizeLabel)")
+            Text(confirmHeadline)
                 .font(.title2.weight(.semibold))
 
             List(results) { result in
-                HStack {
+                HStack(spacing: 10) {
+                    CategoryIcon(category: result.category)
+
                     VStack(alignment: .leading, spacing: 2) {
                         Text(result.category.label)
                         if result.category.action == .emptyTrash {
@@ -144,8 +160,12 @@ struct CleanFlowView: View {
                                 .foregroundStyle(.orange)
                         }
                     }
-                    Spacer()
+
+                    Spacer(minLength: 8)
+
                     Text(ByteCountFormatter.string(fromByteCount: result.totalBytes, countStyle: .file))
+                        .fontWeight(.semibold)
+                        .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
             }
@@ -172,7 +192,7 @@ struct CleanFlowView: View {
         if includesEmptyTrash && !includesMoveToTrash {
             return "Empty Trash"
         }
-        return "Move to Trash"
+        return "Clean \(sizeLabel)"
     }
 
     private var confirmFootnote: String {
@@ -190,13 +210,30 @@ struct CleanFlowView: View {
             Spacer()
 
             if didUndo {
+                Image(systemName: "arrow.uturn.backward.circle.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(Color.accentColor)
+                    .symbolRenderingMode(.hierarchical)
+                    .scaleEffect(showDoneCelebration ? 1 : 0.7)
+                    .opacity(showDoneCelebration ? 1 : 0)
+
                 Text("Restored \(outcome?.itemCount ?? 0) items")
                     .font(.title.weight(.semibold))
+                    .opacity(showDoneCelebration ? 1 : 0)
                 Text("Files were moved back from Trash.")
                     .foregroundStyle(.secondary)
             } else {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(Color.accentColor)
+                    .symbolRenderingMode(.hierarchical)
+                    .scaleEffect(showDoneCelebration ? 1 : 0.7)
+                    .opacity(showDoneCelebration ? 1 : 0)
+
                 Text("Freed \(ByteCountFormatter.string(fromByteCount: outcome?.freedBytes ?? 0, countStyle: .file))")
                     .font(.title.weight(.semibold))
+                    .monospacedDigit()
+                    .opacity(showDoneCelebration ? 1 : 0)
 
                 if outcome?.emptiedTrash == true && !(outcome?.moved.isEmpty == false) {
                     Text("\(outcome?.itemCount ?? 0) items permanently deleted from Trash")
@@ -252,6 +289,18 @@ struct CleanFlowView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity)
+        .onAppear {
+            showDoneCelebration = false
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.78)) {
+                showDoneCelebration = true
+            }
+        }
+        .onChange(of: didUndo) { _, _ in
+            showDoneCelebration = false
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.78)) {
+                showDoneCelebration = true
+            }
+        }
     }
 
     private func requestClean() {

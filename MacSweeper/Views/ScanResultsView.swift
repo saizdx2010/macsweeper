@@ -105,6 +105,8 @@ struct ScanResultsView: View {
                             }
                         }
                     }
+                    .opacity(results.isEmpty ? 0 : 1)
+                    .animation(.easeOut(duration: 0.25), value: results.count)
 
                     Text("Sizes are approximate (allocated disk use; hard links counted once).")
                         .font(.caption2)
@@ -119,6 +121,9 @@ struct ScanResultsView: View {
             HStack {
                 Text("Selected: \(ByteCountFormatter.string(fromByteCount: selectedBytes, countStyle: .file))")
                     .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(.snappy(duration: 0.2), value: selectedBytes)
                 Spacer()
                 NavigationLink("Clean Now", value: AppRoute.clean(results.filter(\.isSelected)))
                     .disabled(isScanning || results.filter(\.isSelected).isEmpty)
@@ -148,30 +153,18 @@ struct ScanResultsView: View {
 
     @ViewBuilder
     private func categoryRow(_ result: Binding<ScanResult>) -> some View {
-        NavigationLink(value: AppRoute.detail(result.wrappedValue)) {
-            HStack {
-                Toggle("", isOn: result.isSelected)
-                    .labelsHidden()
-                    .disabled(result.wrappedValue.category.risk == .manual)
+        // Selection control lives outside NavigationLink so checkbox taps don't navigate.
+        HStack(spacing: 8) {
+            CategoryRowView(result: result)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(result.wrappedValue.category.label)
-                    Text(result.wrappedValue.category.risk.displayName)
-                        .font(.caption)
-                        .foregroundStyle(riskColor(result.wrappedValue.category.risk))
-                }
-
-                Spacer()
-
-                if result.wrappedValue.category.risk == .manual, result.wrappedValue.totalBytes == 0 {
-                    Text("Guide")
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text(ByteCountFormatter.string(fromByteCount: result.wrappedValue.totalBytes, countStyle: .file))
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                }
+            NavigationLink(value: AppRoute.detail(result.wrappedValue)) {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Details")
         }
     }
 
@@ -180,19 +173,6 @@ struct ScanResultsView: View {
             return "Scanning rules… \(scannedRuleCount)/\(loadedRuleCount)"
         }
         return "Scanning…"
-    }
-
-    private func riskColor(_ risk: RiskLevel) -> Color {
-        switch risk {
-        case .safe:
-            return .secondary
-        case .moderate:
-            return .orange
-        case .risky:
-            return .red.opacity(0.8)
-        case .manual:
-            return .secondary
-        }
     }
 
     private func startScan() {

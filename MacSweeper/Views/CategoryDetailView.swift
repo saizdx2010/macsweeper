@@ -21,8 +21,22 @@ struct CategoryDetailView: View {
     var body: some View {
         List {
             Section {
-                Text(result.category.description)
-                    .foregroundStyle(.secondary)
+                HStack(alignment: .top, spacing: 12) {
+                    CategoryIcon(category: result.category, pointSize: 22)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            RiskBadge(risk: result.category.risk)
+                            Text(result.category.risk.guidanceLine)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Text(result.category.description)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 2)
             } header: {
                 Text("Why")
             }

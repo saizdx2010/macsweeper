@@ -9,6 +9,12 @@ struct HomeView: View {
 
     private let diskSpace = DiskSpaceService()
 
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter
+    }()
+
     var body: some View {
         NavigationStack(path: $path) {
             VStack(spacing: 28) {
@@ -16,15 +22,16 @@ struct HomeView: View {
 
                 if let snapshot {
                     VStack(spacing: 12) {
-                        Text(ByteCountFormatter.string(fromByteCount: snapshot.freeBytes, countStyle: .file))
-                            .font(.system(size: 36, weight: .semibold, design: .rounded))
-                        Text("free")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-
-                        ProgressView(value: snapshot.usedFraction)
-                            .progressViewStyle(.linear)
-                            .frame(maxWidth: 280)
+                        DiskRingView(usedFraction: snapshot.usedFraction) {
+                            VStack(spacing: 4) {
+                                Text(ByteCountFormatter.string(fromByteCount: snapshot.freeBytes, countStyle: .file))
+                                    .font(.system(size: 32, weight: .semibold, design: .rounded))
+                                    .monospacedDigit()
+                                Text("free")
+                                    .font(.title3)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
 
                         Text("\(Int((snapshot.usedFraction * 100).rounded()))% used")
                             .font(.subheadline)
@@ -79,7 +86,7 @@ struct HomeView: View {
                 snapshot = diskSpace.currentSnapshot()
             }
         }
-        .frame(minWidth: 420, minHeight: 360)
+        .frame(minWidth: 420, minHeight: 500)
     }
 
     private var lastCleanLabel: String {
@@ -87,7 +94,8 @@ struct HomeView: View {
             return "Last clean: —"
         }
         let size = ByteCountFormatter.string(fromByteCount: last.freedBytes, countStyle: .file)
-        return "Last clean: freed \(size)"
+        let when = Self.relativeFormatter.localizedString(for: last.date, relativeTo: Date())
+        return "Last clean: freed \(size) · \(when)"
     }
 }
 
