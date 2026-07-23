@@ -299,6 +299,51 @@ final class RuleCoverageTests: XCTestCase {
     }
 }
 
+final class DiskMeasurementCancellationTests: XCTestCase {
+    private var tempRoot: URL!
+
+    override func setUp() async throws {
+        tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MacSweeperMeasure-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+    }
+
+    override func tearDown() async throws {
+        try? FileManager.default.removeItem(at: tempRoot)
+    }
+
+    /// Measuring a large tree must honor Task cancellation (browse Cancel depends on this).
+    func testMeasureAllocatedSizeHonorsCancellation() async throws {
+        // Enough files that cancellation is checked mid-walk (every 64 files).
+        for i in 0..<5_000 {
+            let file = tempRoot.appendingPathComponent("f-\(i).txt")
+            try Data("x".utf8).write(to: file)
+        }
+
+        let root = tempRoot!
+        let measureTask = Task.detached {
+            var seen = Set<FileIdentity>()
+            return try DiskMeasurement.measureAllocatedSize(
+                at: root,
+                seenHardLinks: &seen
+            )
+        }
+
+        // Cancel as soon as the walk is scheduled; must not run to completion.
+        await Task.yield()
+        measureTask.cancel()
+
+        do {
+            _ = try await measureTask.value
+            XCTFail("Expected CancellationError — measure finished without honoring cancel")
+        } catch is CancellationError {
+            // Expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+}
+
 final class ScanResultSelectionTests: XCTestCase {
     func testSelectingOnlyCheckedPaths() {
         let category = ScanCategory(

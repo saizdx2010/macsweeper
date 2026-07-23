@@ -39,7 +39,8 @@ enum DiskMeasurement {
         var filesVisited = 0
         for case let fileURL as URL in enumerator {
             filesVisited += 1
-            if filesVisited.isMultiple(of: 256) {
+            // Check often so Cancel stays responsive on large trees (Library, etc.).
+            if filesVisited.isMultiple(of: 64) {
                 try Task.checkCancellation()
             }
             let fileValues = try fileURL.resourceValues(forKeys: sizeKeys)

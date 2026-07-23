@@ -36,6 +36,8 @@ final class DiskBrowseService: ObservableObject {
     private let fileManager: FileManager
     private let homeDirectory: String
     private var measureTask: Task<Void, Never>?
+    /// Bumped on each load/cancel so a finishing task cannot clobber a newer one.
+    private var measureGeneration = 0
     /// Hard-link dedupe shared across the current directory’s child measurements.
     private var seenHardLinks = Set<FileIdentity>()
 
@@ -82,6 +84,7 @@ final class DiskBrowseService: ObservableObject {
     }
 
     func cancel() {
+        measureGeneration += 1
         measureTask?.cancel()
         measureTask = nil
         isMeasuring = false
@@ -112,30 +115,53 @@ final class DiskBrowseService: ObservableObject {
 
     private func startProgressiveMeasure() {
         let path = currentPath
+        let home = homeDirectory
+        let fm = fileManager
+        measureGeneration += 1
+        let generation = measureGeneration
         isMeasuring = true
 
+        // Heavy filesystem work must leave MainActor or the UI beach-balls and Cancel never runs.
         measureTask = Task {
+            defer {
+                if generation == measureGeneration {
+                    measureTask = nil
+                }
+            }
             do {
-                let listed = try listImmediateChildren(of: path)
-                guard !Task.isCancelled else { return }
+                let listed = try await Self.listImmediateChildren(
+                    of: path,
+                    homeDirectory: home,
+                    fileManager: fm
+                )
+                guard generation == measureGeneration, !Task.isCancelled else { return }
                 entries = listed
                 measuredCount = 0
 
+                var localSeen = seenHardLinks
                 for index in listed.indices {
                     try Task.checkCancellation()
+                    guard generation == measureGeneration else { return }
                     let entry = listed[index]
-                    let url = URL(fileURLWithPath: entry.path, isDirectory: entry.isDirectory)
-                    let bytes = try DiskMeasurement.measureAllocatedSize(
-                        at: url,
-                        fileManager: fileManager,
-                        seenHardLinks: &seenHardLinks
+                    let (bytes, updatedSeen) = try await Self.measureEntry(
+                        entry,
+                        fileManager: fm,
+                        seenHardLinks: localSeen
                     )
-                    guard !Task.isCancelled else { return }
+                    localSeen = updatedSeen
+                    guard generation == measureGeneration, !Task.isCancelled else {
+                        if generation == measureGeneration {
+                            seenHardLinks = localSeen
+                        }
+                        return
+                    }
                     if index < entries.count, entries[index].path == entry.path {
                         entries[index].byteCount = bytes
                         measuredCount += 1
                     }
                 }
+                guard generation == measureGeneration else { return }
+                seenHardLinks = localSeen
 
                 entries.sort { lhs, rhs in
                     let lb = lhs.byteCount ?? -1
@@ -145,15 +171,25 @@ final class DiskBrowseService: ObservableObject {
                 }
                 isMeasuring = false
             } catch is CancellationError {
-                isMeasuring = false
+                if generation == measureGeneration {
+                    isMeasuring = false
+                }
             } catch {
-                errorMessage = error.localizedDescription
-                isMeasuring = false
+                if generation == measureGeneration {
+                    errorMessage = error.localizedDescription
+                    isMeasuring = false
+                }
             }
         }
     }
 
-    private func listImmediateChildren(of directoryPath: String) throws -> [DiskBrowseEntry] {
+    /// Lists children off the main actor so directory reads cannot freeze the UI.
+    nonisolated private static func listImmediateChildren(
+        of directoryPath: String,
+        homeDirectory: String,
+        fileManager: FileManager
+    ) async throws -> [DiskBrowseEntry] {
+        try Task.checkCancellation()
         let directoryURL = URL(fileURLWithPath: directoryPath, isDirectory: true)
         let contents = try fileManager.contentsOfDirectory(
             at: directoryURL,
@@ -163,6 +199,7 @@ final class DiskBrowseService: ObservableObject {
 
         var result: [DiskBrowseEntry] = []
         for url in contents {
+            try Task.checkCancellation()
             let standardized = (url.path as NSString).standardizingPath
             guard standardized.hasPrefix(homeDirectory + "/") || standardized == homeDirectory else {
                 continue
@@ -186,6 +223,22 @@ final class DiskBrowseService: ObservableObject {
         return result.sorted {
             $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
         }
+    }
+
+    /// Measures one entry off the main actor; returns updated hard-link dedupe set.
+    nonisolated private static func measureEntry(
+        _ entry: DiskBrowseEntry,
+        fileManager: FileManager,
+        seenHardLinks: Set<FileIdentity>
+    ) async throws -> (Int64, Set<FileIdentity>) {
+        var seen = seenHardLinks
+        let url = URL(fileURLWithPath: entry.path, isDirectory: entry.isDirectory)
+        let bytes = try DiskMeasurement.measureAllocatedSize(
+            at: url,
+            fileManager: fileManager,
+            seenHardLinks: &seen
+        )
+        return (bytes, seen)
     }
 
     private static func clampToHome(_ path: String, home: String) -> String {
