@@ -172,7 +172,7 @@ struct CleanFlowView: View {
             VStack(spacing: 0) {
                 Divider().opacity(0.5)
                 HStack(spacing: 12) {
-                    Button("Cancel") {
+                    SecondaryCTAButton(title: "Cancel", expands: false) {
                         AppNavigation.popLast($navigationPath)
                     }
                     Spacer()
@@ -284,22 +284,21 @@ struct CleanFlowView: View {
             HStack(spacing: 12) {
                 if !didUndo {
                     if outcome?.emptiedTrash != true || !(outcome?.moved.isEmpty ?? true) {
-                        Button("Open Trash") {
+                        SecondaryCTAButton(title: "Open Trash", expands: false) {
                             openTrash()
                         }
                     }
 
                     if let moved = outcome?.moved, !moved.isEmpty {
-                        Button("Undo") {
+                        SecondaryCTAButton(title: "Undo", expands: false) {
                             Task { await performUndo() }
                         }
                     }
                 }
 
-                PrimaryCTAButton(title: "Done") {
+                PrimaryCTAButton(title: "Done", expands: false) {
                     dismissToHome()
                 }
-                .frame(maxWidth: 160)
             }
 
             Spacer()

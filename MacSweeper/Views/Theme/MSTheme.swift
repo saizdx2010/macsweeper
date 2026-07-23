@@ -64,13 +64,15 @@ struct MSCard<Content: View>: View {
 struct PrimaryCTAButton: View {
     let title: String
     var isEnabled: Bool = true
+    var expands: Bool = true
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Text(title)
                 .font(.headline)
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: expands ? .infinity : nil)
+                .padding(.horizontal, expands ? 0 : 18)
                 .padding(.vertical, 12)
         }
         .buttonStyle(.plain)
@@ -78,6 +80,35 @@ struct PrimaryCTAButton: View {
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(isEnabled ? MSTheme.accent : MSTheme.accent.opacity(0.35))
+        )
+        .disabled(!isEnabled)
+    }
+}
+
+/// Secondary action matching `PrimaryCTAButton` size and radius.
+struct SecondaryCTAButton: View {
+    let title: String
+    var isEnabled: Bool = true
+    var expands: Bool = true
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.headline)
+                .frame(maxWidth: expands ? .infinity : nil)
+                .padding(.horizontal, expands ? 0 : 18)
+                .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.primary.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(MSTheme.cardStroke, lineWidth: 1)
         )
         .disabled(!isEnabled)
     }
