@@ -169,7 +169,7 @@ struct CategoryDetailView: View {
         title: String,
         selection: Binding<T>,
         options: [T],
-        label: (T) -> String
+        label: @escaping (T) -> String
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(title, systemImage: icon)

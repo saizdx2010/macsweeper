@@ -49,8 +49,9 @@ final class DiskBrowseService: ObservableObject {
     }
 
     var canGoUp: Bool {
-        let standardized = (currentPath as NSString).standardizingPath
-        return standardized != homeDirectory && standardized.hasPrefix(homeDirectory + "/")
+        let standardized = URL(fileURLWithPath: currentPath).resolvingSymlinksInPath().path
+        let home = URL(fileURLWithPath: homeDirectory).resolvingSymlinksInPath().path
+        return standardized != home && standardized.hasPrefix(home + "/")
     }
 
     var parentPath: String? {
@@ -103,8 +104,8 @@ final class DiskBrowseService: ObservableObject {
 
         guard panel.runModal() == .OK, let url = panel.url else { return nil }
 
-        let standardized = (url.path as NSString).standardizingPath
-        guard standardized == homeDirectory || standardized.hasPrefix(homeDirectory + "/") else {
+        let standardized = Self.resolveUnderHome(url.path, home: homeDirectory)
+        guard let standardized else {
             errorMessage = "Browse is limited to folders inside your home folder."
             return nil
         }
@@ -200,12 +201,9 @@ final class DiskBrowseService: ObservableObject {
         var result: [DiskBrowseEntry] = []
         for url in contents {
             try Task.checkCancellation()
-            let standardized = (url.path as NSString).standardizingPath
-            guard standardized.hasPrefix(homeDirectory + "/") || standardized == homeDirectory else {
+            guard let standardized = resolveUnderHome(url.path, home: homeDirectory) else {
                 continue
             }
-            // Never list outside home via symlink escape.
-            if !standardized.hasPrefix(homeDirectory) { continue }
 
             let values = try? url.resourceValues(forKeys: DiskMeasurement.sizeKeys)
             let isDir = values?.isDirectory == true
@@ -242,10 +240,16 @@ final class DiskBrowseService: ObservableObject {
     }
 
     private static func clampToHome(_ path: String, home: String) -> String {
-        let standardized = (path as NSString).standardizingPath
-        if standardized == home || standardized.hasPrefix(home + "/") {
-            return standardized
+        resolveUnderHome(path, home: home) ?? home
+    }
+
+    /// Resolves symlinks, then returns the path only if it stays under `home`.
+    nonisolated private static func resolveUnderHome(_ path: String, home: String) -> String? {
+        let resolvedHome = URL(fileURLWithPath: home).resolvingSymlinksInPath().path
+        let resolved = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
+        if resolved == resolvedHome || resolved.hasPrefix(resolvedHome + "/") {
+            return resolved
         }
-        return home
+        return nil
     }
 }

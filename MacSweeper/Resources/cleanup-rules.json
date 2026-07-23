@@ -105,11 +105,19 @@
     "label": "Spotify cache",
     "paths": [
       "~/Library/Caches/com.spotify.client",
-      "~/Library/Application Support/Spotify/PersistentCache",
-      "~/Library/Application Support/Spotify/Storage"
+      "~/Library/Application Support/Spotify/PersistentCache"
     ],
     "risk": "safe",
-    "description": "Spotify media and app caches. Tracks re-download when you play them again."
+    "description": "Spotify app caches. Regenerated as you use Spotify."
+  },
+  {
+    "id": "spotify_offline_storage",
+    "label": "Spotify offline downloads",
+    "paths": [
+      "~/Library/Application Support/Spotify/Storage"
+    ],
+    "risk": "moderate",
+    "description": "Offline/downloaded Spotify media. Cleaning removes offline tracks until you download them again."
   },
   {
     "id": "adobe_temp",
@@ -216,8 +224,8 @@
     "id": "user_logs",
     "label": "User logs",
     "paths": ["~/Library/Logs"],
-    "risk": "safe",
-    "description": "Application log files that regenerate as apps run."
+    "risk": "moderate",
+    "description": "Application log files. May contain paths, URLs, or tokens — review before cleaning. Regenerates as apps run."
   },
   {
     "id": "xcode_derived_data",

@@ -94,7 +94,9 @@ struct CleanupHistoryView: View {
     }
 
     private func displayPath(_ path: String) -> String {
+        if path == "~" || path.hasPrefix("~/") { return path }
         let home = NSHomeDirectory()
+        if path == home { return "~" }
         if path.hasPrefix(home + "/") {
             return "~" + path.dropFirst(home.count)
         }

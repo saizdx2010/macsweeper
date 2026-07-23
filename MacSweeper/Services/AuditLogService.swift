@@ -22,6 +22,7 @@ final class AuditLogService: ObservableObject {
     @Published private(set) var lastClean: SessionSummary?
 
     private let defaults: UserDefaults
+    private let homeDirectory: String
     private let lastCleanDateKey = "lastClean.date"
     private let lastCleanBytesKey = "lastClean.freedBytes"
     private let lastCleanCountKey = "lastClean.itemCount"
@@ -31,8 +32,9 @@ final class AuditLogService: ObservableObject {
     /// When false, history stays session-only and is not written to disk/UserDefaults.
     var keepHistoryEnabled: Bool = true
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard, homeDirectory: String = NSHomeDirectory()) {
         self.defaults = defaults
+        self.homeDirectory = (homeDirectory as NSString).standardizingPath
         if let date = defaults.object(forKey: lastCleanDateKey) as? Date {
             lastClean = SessionSummary(
                 date: date,
@@ -51,9 +53,9 @@ final class AuditLogService: ObservableObject {
                     id: UUID(),
                     timestamp: now,
                     categoryID: item.categoryID,
-                    path: item.originalPath,
+                    path: privacyPath(item.originalPath),
                     byteCount: item.byteCount,
-                    destination: item.trashURL.path
+                    destination: privacyPath(item.trashURL.path)
                 ),
                 at: 0
             )
@@ -71,7 +73,7 @@ final class AuditLogService: ObservableObject {
         let emptiedBytes = max(Int64(0), outcome.freedBytes - movedBytes)
 
         if outcome.emptiedTrash && emptiedCount > 0 {
-            let trashPath = NSHomeDirectory() + "/.Trash"
+            let trashPath = homeDirectory + "/.Trash"
             items.append(
                 CleanupService.MovedItem(
                     categoryID: "empty_trash",
@@ -156,7 +158,7 @@ final class AuditLogService: ObservableObject {
         ]
         for item in items {
             lines.append(
-                "\(formatter.string(from: summary.date))\t\(item.categoryID)\t\(item.byteCount)\t\(item.originalPath)\t→\t\(item.trashURL.path)"
+                "\(formatter.string(from: summary.date))\t\(item.categoryID)\t\(item.byteCount)\t\(privacyPath(item.originalPath))\t→\t\(privacyPath(item.trashURL.path))"
             )
         }
         lines.append("")
@@ -167,8 +169,10 @@ final class AuditLogService: ObservableObject {
             defer { try? handle.close() }
             _ = try? handle.seekToEnd()
             try? handle.write(contentsOf: data)
+            restrictFilePermissions(at: url)
         } else {
             try? data.write(to: url, options: .atomic)
+            restrictFilePermissions(at: url)
         }
     }
 
@@ -181,9 +185,34 @@ final class AuditLogService: ObservableObject {
         let dir = support.appendingPathComponent("MacSweeper", isDirectory: true)
         do {
             try fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
+            restrictDirectoryPermissions(at: dir)
         } catch {
             return nil
         }
         return dir.appendingPathComponent("cleanup.log")
+    }
+
+    /// Store `~/…` form so username is not written into history / logs.
+    private func privacyPath(_ absolute: String) -> String {
+        let standardized = (absolute as NSString).standardizingPath
+        if standardized == homeDirectory { return "~" }
+        if standardized.hasPrefix(homeDirectory + "/") {
+            return "~" + standardized.dropFirst(homeDirectory.count)
+        }
+        return standardized
+    }
+
+    private func restrictDirectoryPermissions(at url: URL) {
+        try? fileManager.setAttributes(
+            [.posixPermissions: NSNumber(value: 0o700)],
+            ofItemAtPath: url.path
+        )
+    }
+
+    private func restrictFilePermissions(at url: URL) {
+        try? fileManager.setAttributes(
+            [.posixPermissions: NSNumber(value: 0o600)],
+            ofItemAtPath: url.path
+        )
     }
 }

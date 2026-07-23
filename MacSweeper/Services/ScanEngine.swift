@@ -381,12 +381,14 @@ actor ScanEngine {
         var rootPaths: [String] = category.paths.map(expandHome)
         for extra in extraDevRoots {
             let standardized = (extra as NSString).standardizingPath
+            guard isPathUnderHome(standardized) else { continue }
             rootPaths.append(standardized)
         }
 
         for rootPath in rootPaths {
             try Task.checkCancellation()
             let standardized = (rootPath as NSString).standardizingPath
+            guard isPathUnderHome(standardized) else { continue }
             guard seenRoots.insert(standardized).inserted else { continue }
 
             var isDirectory: ObjCBool = false
@@ -501,8 +503,9 @@ actor ScanEngine {
     }
 
     private func isPathUnderHome(_ path: String) -> Bool {
-        let standardized = (path as NSString).standardizingPath
-        return standardized == homeDirectory || standardized.hasPrefix(homeDirectory + "/")
+        let home = URL(fileURLWithPath: homeDirectory).resolvingSymlinksInPath().path
+        let standardized = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
+        return standardized == home || standardized.hasPrefix(home + "/")
     }
 
     private func isProtectedDiscoveryPath(_ path: String) -> Bool {

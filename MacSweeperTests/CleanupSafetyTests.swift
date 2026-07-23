@@ -60,6 +60,35 @@ final class CleanupAllowlistTests: XCTestCase {
         XCTAssertFalse(allowed)
     }
 
+    func testDeniesSSHDirectory() async {
+        let allowed = await service.isAllowedToTrash(home + "/.ssh/id_rsa")
+        XCTAssertFalse(allowed)
+    }
+
+    func testDeniesAWSCredentials() async {
+        let allowed = await service.isAllowedToTrash(home + "/.aws/credentials")
+        XCTAssertFalse(allowed)
+    }
+
+    func testDeniesGnuPG() async {
+        let allowed = await service.isAllowedToTrash(home + "/.gnupg/private-keys-v1.d")
+        XCTAssertFalse(allowed)
+    }
+
+    func testDeniesChromeLoginData() async {
+        let allowed = await service.isAllowedToTrash(
+            home + "/Library/Application Support/Google/Chrome/Default/Login Data"
+        )
+        XCTAssertFalse(allowed)
+    }
+
+    func testAllowsChromeCodeCache() async {
+        let allowed = await service.isAllowedToTrash(
+            home + "/Library/Application Support/Google/Chrome/Default/Code Cache"
+        )
+        XCTAssertTrue(allowed)
+    }
+
     func testAllowsDownloads() async {
         let allowed = await service.isAllowedToTrash(home + "/Downloads/old.dmg")
         XCTAssertTrue(allowed)
@@ -160,6 +189,24 @@ final class TrashRestoreTests: XCTestCase {
         XCTAssertEqual(restore.itemCount, 0)
         XCTAssertEqual(restore.failures.count, 1)
         XCTAssertTrue(restore.failures[0].message.contains("already exists"))
+    }
+
+    func testRestoreRejectsProtectedOriginalPath() async throws {
+        let docs = tempRoot.appendingPathComponent("Documents/secret.txt")
+        let trashCopy = tempRoot.appendingPathComponent(".Trash/secret.txt")
+        try Data("b".utf8).write(to: trashCopy)
+
+        let item = CleanupService.MovedItem(
+            categoryID: "test",
+            originalPath: docs.path,
+            trashURL: trashCopy,
+            byteCount: 1
+        )
+        let restore = try await service.restoreFromTrash([item])
+        XCTAssertEqual(restore.itemCount, 0)
+        XCTAssertEqual(restore.failures.count, 1)
+        XCTAssertTrue(restore.failures[0].message.contains("protected"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: trashCopy.path))
     }
 
     func testEmptyTrashOnlyDeletesUnderTrash() async throws {

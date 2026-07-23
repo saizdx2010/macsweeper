@@ -93,8 +93,9 @@ final class AppSettings: ObservableObject {
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         let home = (NSHomeDirectory() as NSString).standardizingPath
-        let standardized = (url.path as NSString).standardizingPath
-        guard standardized == home || standardized.hasPrefix(home + "/") else {
+        let resolvedHome = URL(fileURLWithPath: home).resolvingSymlinksInPath().path
+        let standardized = URL(fileURLWithPath: url.path).resolvingSymlinksInPath().path
+        guard standardized == resolvedHome || standardized.hasPrefix(resolvedHome + "/") else {
             presentAlert(
                 title: "Folder not allowed",
                 message: "Dev scan folders must be inside your home folder."
@@ -160,8 +161,16 @@ final class AppSettings: ObservableObject {
                 relativeTo: nil,
                 bookmarkDataIsStale: &isStale
             ) {
-                _ = url.startAccessingSecurityScopedResource()
-                return url
+                let started = url.startAccessingSecurityScopedResource()
+                defer {
+                    if started {
+                        url.stopAccessingSecurityScopedResource()
+                    }
+                }
+                // Return a plain path URL so callers do not hold an open security scope.
+                let path = url.path
+                guard FileManager.default.fileExists(atPath: path) else { return nil }
+                return URL(fileURLWithPath: path, isDirectory: true)
             }
         }
         let url = URL(fileURLWithPath: fallbackPath, isDirectory: true)

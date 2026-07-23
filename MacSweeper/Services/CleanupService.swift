@@ -62,6 +62,14 @@ actor CleanupService {
         "Pictures",
         "Music",
         "Movies",
+        // Credential / secrets roots
+        ".ssh",
+        ".gnupg",
+        ".aws",
+        ".config",
+        ".kube",
+        ".docker",
+        // Sensitive Library data
         "Library/Keychains",
         "Library/Mail",
         "Library/Messages",
@@ -70,6 +78,30 @@ actor CleanupService {
         "Library/Safari",
         "Library/Accounts",
         "Library/Cookies",
+        "Library/IdentityServices",
+        "Library/Calendars",
+        "Library/Reminders",
+        "Library/Shortcuts",
+        "Library/PersonalizationPortrait",
+        "Library/Application Support/AddressBook",
+        "Library/Application Support/CallHistoryDB",
+        "Library/Application Support/CallHistoryTransactions",
+        "Library/Application Support/com.apple.TCC",
+        "Library/Application Support/1Password",
+        "Library/Application Support/com.1password.1password",
+        "Library/Application Support/Bitwarden",
+        "Library/Application Support/com.bitwarden.desktop",
+        // Browser profile credential stores (caches live under different rule paths)
+        "Library/Application Support/Google/Chrome/Default/Login Data",
+        "Library/Application Support/Google/Chrome/Default/Cookies",
+        "Library/Application Support/Google/Chrome/Default/Web Data",
+        "Library/Application Support/Microsoft Edge/Default/Login Data",
+        "Library/Application Support/Microsoft Edge/Default/Cookies",
+        "Library/Application Support/Microsoft Edge/Default/Web Data",
+        "Library/Application Support/BraveSoftware/Brave-Browser/Default/Login Data",
+        "Library/Application Support/BraveSoftware/Brave-Browser/Default/Cookies",
+        "Library/Application Support/BraveSoftware/Brave-Browser/Default/Web Data",
+        "Library/Application Support/Firefox/Profiles",
     ]
 
     /// Dev-mode discovery targets allowed under otherwise-protected roots (Documents/Desktop).
@@ -253,6 +285,13 @@ actor CleanupService {
                 continue
             }
 
+            guard isAllowedToTrash(item.originalPath) else {
+                failures.append(
+                    Failure(path: item.originalPath, message: "Restore path is protected and cannot be written.")
+                )
+                continue
+            }
+
             let destination = URL(fileURLWithPath: item.originalPath)
             let parent = destination.deletingLastPathComponent()
 
@@ -289,17 +328,19 @@ actor CleanupService {
 
     /// Whether a path may be moved to Trash (home-only allowlist + protected prefixes).
     func isAllowedToTrash(_ path: String) -> Bool {
-        let standardized = (path as NSString).standardizingPath
-        guard standardized.hasPrefix(homeDirectory + "/") || standardized == homeDirectory + "/.Trash" else {
+        // Resolve symlinks so a link under an allowed folder cannot escape into a protected root.
+        let standardized = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
+        let home = URL(fileURLWithPath: homeDirectory).resolvingSymlinksInPath().path
+        guard standardized.hasPrefix(home + "/") || standardized == home + "/.Trash" else {
             // Allow ~/.Trash itself only for empty-trash action (handled separately).
             return false
         }
-        guard standardized != homeDirectory else { return false }
+        guard standardized != home else { return false }
 
         // Never move the Trash folder itself via trashItem.
-        if standardized == homeDirectory + "/.Trash" { return false }
+        if standardized == home + "/.Trash" { return false }
 
-        let relative = String(standardized.dropFirst(homeDirectory.count + 1))
+        let relative = String(standardized.dropFirst(home.count + 1))
         if relative == "Library" { return false }
 
         let lastComponent = (relative as NSString).lastPathComponent
