@@ -4,13 +4,24 @@ import SwiftUI
 struct CleanFlowView: View {
     let results: [ScanResult]
 
+    @Environment(\.dismiss) private var dismiss
+
     @State private var phase: Phase = .confirm
     @State private var outcome: CleanupService.Outcome?
+    @State private var showConfirmation = false
 
     private let cleanup = CleanupService()
 
     private var totalBytes: Int64 {
         results.reduce(0) { $0 + $1.totalBytes }
+    }
+
+    private var totalItems: Int {
+        results.reduce(0) { $0 + $1.paths.count }
+    }
+
+    private var sizeLabel: String {
+        ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file)
     }
 
     enum Phase {
@@ -33,11 +44,29 @@ struct CleanFlowView: View {
         }
         .navigationTitle("Clean")
         .padding()
+        .confirmationDialog(
+            "Move \(sizeLabel) to Trash?",
+            isPresented: $showConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Move to Trash", role: .destructive) {
+                Task { await performClean() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(confirmationMessage)
+        }
+    }
+
+    private var confirmationMessage: String {
+        let categoryWord = results.count == 1 ? "category" : "categories"
+        let itemWord = totalItems == 1 ? "item" : "items"
+        return "\(results.count) \(categoryWord) · \(totalItems) \(itemWord). Items move to Trash and can be restored anytime."
     }
 
     private var confirmView: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Ready to clean \(ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file))")
+            Text("Ready to clean \(sizeLabel)")
                 .font(.title2.weight(.semibold))
 
             List(results) { result in
@@ -54,9 +83,12 @@ struct CleanFlowView: View {
                 .foregroundStyle(.secondary)
 
             HStack {
+                Button("Cancel") {
+                    dismiss()
+                }
                 Spacer()
                 Button("Move to Trash") {
-                    Task { await performClean() }
+                    showConfirmation = true
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(results.isEmpty)
