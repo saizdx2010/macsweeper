@@ -73,7 +73,7 @@
     "label": "Xcode DerivedData",
     "paths": ["~/Library/Developer/Xcode/DerivedData"],
     "risk": "safe",
-    "description": "Xcode build intermediates. Safe to remove; next build regenerates them."
+    "description": "Xcode build intermediates. Safe to remove; next build regenerates them. The folder for this running MacSweeper build is excluded so Clean cannot delete the live app."
   },
   {
     "id": "xcode_archives",

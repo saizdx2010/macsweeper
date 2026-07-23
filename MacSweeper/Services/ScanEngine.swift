@@ -139,6 +139,17 @@ actor ScanEngine {
                 continue
             }
 
+            // Don't measure (or later trash) a folder that contains this running app —
+            // e.g. ~/Library/Developer/Xcode/DerivedData while debugging from Xcode.
+            if RunningAppSafety.isProtected(expanded) {
+                try appendMeasuredChildren(
+                    of: expanded,
+                    into: &scannedPaths,
+                    seenHardLinks: &seenHardLinks
+                )
+                continue
+            }
+
             let url = URL(fileURLWithPath: expanded, isDirectory: isDirectory.boolValue)
             let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
             guard bytes > 0 else { continue }
@@ -153,6 +164,45 @@ actor ScanEngine {
             paths: scannedPaths.sorted { $0.byteCount > $1.byteCount },
             isSelected: category.risk.isSelectedByDefault
         )
+    }
+
+    /// Measures immediate children, skipping any path that contains the running app.
+    private func appendMeasuredChildren(
+        of directoryPath: String,
+        into scannedPaths: inout [ScannedPath],
+        seenHardLinks: inout Set<FileIdentity>
+    ) throws {
+        let standardized = (directoryPath as NSString).standardizingPath
+        if standardized == RunningAppSafety.bundlePath {
+            return
+        }
+
+        let directoryURL = URL(fileURLWithPath: directoryPath, isDirectory: true)
+        let children: [URL]
+        do {
+            children = try fileManager.contentsOfDirectory(
+                at: directoryURL,
+                includingPropertiesForKeys: Array(sizeKeys),
+                options: [.skipsHiddenFiles]
+            )
+        } catch {
+            return
+        }
+
+        for child in children {
+            try Task.checkCancellation()
+            if RunningAppSafety.isProtected(child.path) {
+                continue
+            }
+            var childIsDirectory: ObjCBool = false
+            guard fileManager.fileExists(atPath: child.path, isDirectory: &childIsDirectory) else {
+                continue
+            }
+            let url = URL(fileURLWithPath: child.path, isDirectory: childIsDirectory.boolValue)
+            let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
+            guard bytes > 0 else { continue }
+            scannedPaths.append(ScannedPath(path: url.path, byteCount: bytes))
+        }
     }
 
     /// Manual + guide: appear when any configured path exists (size optional).

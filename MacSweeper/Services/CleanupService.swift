@@ -1,5 +1,24 @@
 import Foundation
 
+/// Blocks cleanup that would remove the running MacSweeper.app (e.g. Xcode DerivedData).
+enum RunningAppSafety {
+    static var bundlePath: String {
+        (Bundle.main.bundlePath as NSString).standardizingPath
+    }
+
+    /// True if removing `path` would delete or corrupt the running app bundle.
+    static func isProtected(_ path: String) -> Bool {
+        let standardized = (path as NSString).standardizingPath
+        let bundle = bundlePath
+        if standardized == bundle { return true }
+        // Ancestor of the running app (e.g. DerivedData while debugging from Xcode).
+        if bundle.hasPrefix(standardized + "/") { return true }
+        // File/folder inside the running app bundle.
+        if standardized.hasPrefix(bundle + "/") { return true }
+        return false
+    }
+}
+
 /// Moves selected scan results to Trash (never permanent delete, except Empty Trash).
 actor CleanupService {
     struct MovedItem: Equatable, Identifiable, Sendable {
@@ -93,6 +112,15 @@ actor CleanupService {
                 try Task.checkCancellation()
 
                 let path = scanned.path
+                if RunningAppSafety.isProtected(path) {
+                    failures.append(
+                        Failure(
+                            path: path,
+                            message: "Skipped — MacSweeper is running from this location. Quit the app or clean other DerivedData folders only."
+                        )
+                    )
+                    continue
+                }
                 guard isAllowedToTrash(path) else {
                     failures.append(
                         Failure(path: path, message: "Path is protected and cannot be cleaned.")
