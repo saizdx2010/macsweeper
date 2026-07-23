@@ -118,6 +118,10 @@ actor ScanEngine {
             return try measureFindNamedDirs(category)
         }
 
+        if category.scan == .listChildren {
+            return try measureListChildren(category)
+        }
+
         // Manual guidance: show when a marker path exists, even at 0 measured bytes.
         if category.risk == .manual, category.guideCommand != nil {
             return try measureManualGuide(category)
@@ -244,27 +248,49 @@ actor ScanEngine {
 
     /// Lists top-level Trash entries so item counts match what Empty Trash deletes.
     private func measureEmptyTrash(_ category: ScanCategory) throws -> ScanResult? {
+        try measureListedChildren(
+            category,
+            directoryOptions: [],
+            isSelected: category.risk.isSelectedByDefault
+        )
+    }
+
+    /// Lists immediate children of configured folders (Downloads, Mail downloads, etc.).
+    private func measureListChildren(_ category: ScanCategory) throws -> ScanResult? {
+        try measureListedChildren(
+            category,
+            directoryOptions: [.skipsHiddenFiles],
+            isSelected: category.risk.isSelectedByDefault
+        )
+    }
+
+    /// Measures each immediate child of the configured directories.
+    private func measureListedChildren(
+        _ category: ScanCategory,
+        directoryOptions: FileManager.DirectoryEnumerationOptions,
+        isSelected: Bool
+    ) throws -> ScanResult? {
         var scannedPaths: [ScannedPath] = []
         var seenHardLinks = Set<FileIdentity>()
 
         for pathString in category.paths {
             try Task.checkCancellation()
 
-            let trashPath = expandHome(pathString)
+            let directoryPath = expandHome(pathString)
             var isDirectory: ObjCBool = false
-            guard fileManager.fileExists(atPath: trashPath, isDirectory: &isDirectory),
+            guard fileManager.fileExists(atPath: directoryPath, isDirectory: &isDirectory),
                   isDirectory.boolValue
             else {
                 continue
             }
 
-            let trashURL = URL(fileURLWithPath: trashPath, isDirectory: true)
+            let directoryURL = URL(fileURLWithPath: directoryPath, isDirectory: true)
             let contents: [URL]
             do {
                 contents = try fileManager.contentsOfDirectory(
-                    at: trashURL,
+                    at: directoryURL,
                     includingPropertiesForKeys: Array(sizeKeys),
-                    options: []
+                    options: directoryOptions
                 )
             } catch {
                 continue
@@ -272,6 +298,9 @@ actor ScanEngine {
 
             for itemURL in contents {
                 try Task.checkCancellation()
+                if RunningAppSafety.isProtected(itemURL.path) {
+                    continue
+                }
                 var itemIsDirectory: ObjCBool = false
                 guard fileManager.fileExists(atPath: itemURL.path, isDirectory: &itemIsDirectory) else {
                     continue
@@ -291,7 +320,7 @@ actor ScanEngine {
         return ScanResult(
             category: category,
             paths: scannedPaths.sorted { $0.byteCount > $1.byteCount },
-            isSelected: category.risk.isSelectedByDefault
+            isSelected: isSelected
         )
     }
 

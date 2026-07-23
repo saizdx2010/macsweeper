@@ -7,6 +7,11 @@ struct ScannedPath: Identifiable, Hashable {
     let path: String
     let byteCount: Int64
 
+    /// Last path component, e.g. `report.pdf`.
+    var displayName: String {
+        (path as NSString).lastPathComponent
+    }
+
     /// Home-relative display form, e.g. `~/Library/Caches/...`.
     var displayPath: String {
         let home = NSHomeDirectory()

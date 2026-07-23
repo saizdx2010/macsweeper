@@ -104,6 +104,7 @@
     "label": "Mail downloads",
     "paths": ["~/Library/Containers/com.apple.mail/Data/Library/Mail Downloads"],
     "risk": "moderate",
+    "scan": "list_children",
     "description": "Attachments Mail saved locally. May need re-download from the server."
   },
   {
@@ -111,6 +112,7 @@
     "label": "Downloads folder",
     "paths": ["~/Downloads"],
     "risk": "moderate",
+    "scan": "list_children",
     "description": "Everything currently in Downloads. Review carefully — may include keepers."
   },
   {

@@ -1,10 +1,12 @@
 import SwiftUI
 
-/// Circular used-space gauge with free-space content in the center.
+/// Circular progress gauge with centered content.
 struct DiskRingView<Content: View>: View {
     let usedFraction: Double
     var lineWidth: CGFloat = 10
     var size: CGFloat = 168
+    var progressColor: Color = MSTheme.accent
+    var trackColor: Color = Color.secondary.opacity(0.16)
     @ViewBuilder var content: () -> Content
 
     private var clampedFraction: Double {
@@ -14,12 +16,12 @@ struct DiskRingView<Content: View>: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.secondary.opacity(0.18), lineWidth: lineWidth)
+                .stroke(trackColor, lineWidth: lineWidth)
 
             Circle()
                 .trim(from: 0, to: clampedFraction)
                 .stroke(
-                    Color.accentColor.opacity(0.85),
+                    progressColor,
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))

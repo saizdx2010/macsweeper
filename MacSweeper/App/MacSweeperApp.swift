@@ -9,6 +9,7 @@ struct MacSweeperApp: App {
             HomeView()
                 .environmentObject(auditLog)
         }
-        .defaultSize(width: 480, height: 420)
+        .defaultSize(width: 720, height: 560)
+        .windowResizability(.contentMinSize)
     }
 }

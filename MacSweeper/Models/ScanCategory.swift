@@ -10,6 +10,8 @@ enum CleanupAction: String, Codable, Hashable {
 enum ScanStrategy: String, Codable, Hashable {
     case fixed
     case findNamedDirs = "find_named_dirs"
+    /// Immediate children of each configured directory (e.g. Downloads).
+    case listChildren = "list_children"
 }
 
 /// A cleanup rule loaded from `cleanup-rules.json`.

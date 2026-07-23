@@ -8,7 +8,7 @@ struct CategoryIcon: View {
     private var tint: Color {
         switch category.risk {
         case .safe, .manual:
-            return Color.accentColor.opacity(0.85)
+            return MSTheme.accent
         case .moderate, .risky:
             return category.risk.color
         }

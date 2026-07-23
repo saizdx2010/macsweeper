@@ -49,19 +49,21 @@ struct CleanFlowView: View {
     }
 
     var body: some View {
-        Group {
-            switch phase {
-            case .confirm:
-                confirmView
-            case .working:
-                ProgressView(workingLabel)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .done:
-                doneView
+        ZStack {
+            StageBackground()
+
+            Group {
+                switch phase {
+                case .confirm:
+                    confirmView
+                case .working:
+                    workingView
+                case .done:
+                    doneView
+                }
             }
         }
         .navigationTitle("Clean")
-        .padding()
         .confirmationDialog(
             confirmationTitle,
             isPresented: $showConfirmation,
@@ -144,48 +146,55 @@ struct CleanFlowView: View {
     }
 
     private var confirmView: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(confirmHeadline)
-                .font(.title2.weight(.semibold))
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: MSTheme.sectionSpacing) {
+                    Text(confirmHeadline)
+                        .font(MSTheme.titleFont)
 
-            List(results) { result in
-                HStack(spacing: 10) {
-                    CategoryIcon(category: result.category)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(result.category.label)
-                        if result.category.action == .emptyTrash {
-                            Text("Permanent delete")
-                                .font(.caption)
-                                .foregroundStyle(.orange)
+                    VStack(spacing: 10) {
+                        ForEach(results) { result in
+                            CategorySummaryCard(result: result)
                         }
                     }
 
-                    Spacer(minLength: 8)
-
-                    Text(ByteCountFormatter.string(fromByteCount: result.totalBytes, countStyle: .file))
-                        .fontWeight(.semibold)
-                        .monospacedDigit()
+                    Text(confirmFootnote)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
+                .padding(MSTheme.pagePadding)
             }
-            .frame(minHeight: 120)
 
-            Text(confirmFootnote)
-                .foregroundStyle(.secondary)
-
-            HStack {
-                Button("Cancel") {
-                    navigationPath.removeLast()
+            VStack(spacing: 0) {
+                Divider().opacity(0.5)
+                HStack(spacing: 12) {
+                    Button("Cancel") {
+                        navigationPath.removeLast()
+                    }
+                    Spacer()
+                    PrimaryCTAButton(title: primaryActionTitle, isEnabled: !results.isEmpty) {
+                        requestClean()
+                    }
+                    .frame(maxWidth: 240)
                 }
-                Spacer()
-                Button(primaryActionTitle) {
-                    requestClean()
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(results.isEmpty)
+                .padding(.horizontal, MSTheme.pagePadding)
+                .padding(.vertical, 14)
             }
         }
+    }
+
+    private var workingView: some View {
+        VStack(spacing: 20) {
+            ProgressView()
+                .controlSize(.large)
+                .tint(MSTheme.accent)
+            Text(workingLabel)
+                .font(MSTheme.titleFont)
+            Text("This usually only takes a moment")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var primaryActionTitle: String {
@@ -206,32 +215,33 @@ struct CleanFlowView: View {
     }
 
     private var doneView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             Spacer()
 
-            if didUndo {
-                Image(systemName: "arrow.uturn.backward.circle.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(Color.accentColor)
-                    .symbolRenderingMode(.hierarchical)
+            ZStack {
+                Circle()
+                    .fill(MSTheme.accent.opacity(0.12))
+                    .frame(width: 96, height: 96)
                     .scaleEffect(showDoneCelebration ? 1 : 0.7)
                     .opacity(showDoneCelebration ? 1 : 0)
 
+                Image(systemName: didUndo ? "arrow.uturn.backward.circle.fill" : "checkmark.circle.fill")
+                    .font(.system(size: 56))
+                    .foregroundStyle(MSTheme.accent)
+                    .symbolRenderingMode(.hierarchical)
+                    .scaleEffect(showDoneCelebration ? 1 : 0.7)
+                    .opacity(showDoneCelebration ? 1 : 0)
+            }
+
+            if didUndo {
                 Text("Restored \(outcome?.itemCount ?? 0) items")
-                    .font(.title.weight(.semibold))
+                    .font(MSTheme.displayFont)
                     .opacity(showDoneCelebration ? 1 : 0)
                 Text("Files were moved back from Trash.")
                     .foregroundStyle(.secondary)
             } else {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(Color.accentColor)
-                    .symbolRenderingMode(.hierarchical)
-                    .scaleEffect(showDoneCelebration ? 1 : 0.7)
-                    .opacity(showDoneCelebration ? 1 : 0)
-
                 Text("Freed \(ByteCountFormatter.string(fromByteCount: outcome?.freedBytes ?? 0, countStyle: .file))")
-                    .font(.title.weight(.semibold))
+                    .font(MSTheme.displayFont)
                     .monospacedDigit()
                     .opacity(showDoneCelebration ? 1 : 0)
 
@@ -257,11 +267,13 @@ struct CleanFlowView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
+                        .frame(maxWidth: 360)
                 } else if outcome?.moved.isEmpty == false {
                     Text("Undo restores moved items still in Trash. Emptied Trash cannot be undone.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
+                        .frame(maxWidth: 360)
                 }
             }
 
@@ -280,15 +292,16 @@ struct CleanFlowView: View {
                     }
                 }
 
-                Button("Done") {
+                PrimaryCTAButton(title: "Done") {
                     dismissToHome()
                 }
-                .buttonStyle(.borderedProminent)
+                .frame(maxWidth: 160)
             }
 
             Spacer()
         }
         .frame(maxWidth: .infinity)
+        .padding(MSTheme.pagePadding)
         .onAppear {
             showDoneCelebration = false
             withAnimation(.spring(response: 0.45, dampingFraction: 0.78)) {
