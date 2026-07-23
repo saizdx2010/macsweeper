@@ -6,7 +6,7 @@ Inspired by [ncdu](https://dev.yorhel.nl/ncdu) and [mac-cleanup-go](https://gith
 
 ## Status
 
-Phase 1: real home-folder scan via JSON rules, sized checkbox results, and category detail. Trash moves land in Phase 2.
+Phase 2: scan + preview + move selected items to Trash, with confirm dialog, session audit log, and undo hint.
 
 ## Requirements
 
@@ -39,7 +39,7 @@ MacSweeper/
 ├── App/           # SwiftUI entry
 ├── Views/         # Home, Results, Detail, Clean
 ├── Models/        # Categories, results, risk levels
-├── Services/      # Scan engine (live), cleanup/audit stubs (Phase 2)
+├── Services/      # Scan, cleanup (Trash), audit log, disk space
 └── Resources/     # cleanup-rules.json
 ```
 
