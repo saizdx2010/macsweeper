@@ -150,5 +150,70 @@
     "risk": "moderate",
     "action": "empty_trash",
     "description": "Permanently deletes everything currently in Trash. Off by default. May need Full Disk Access for some items."
+  },
+  {
+    "id": "dev_node_modules",
+    "label": "node_modules",
+    "paths": [
+      "~/Developer",
+      "~/Projects",
+      "~/src",
+      "~/code",
+      "~/Documents/GitHub",
+      "~/Desktop"
+    ],
+    "risk": "risky",
+    "group": "dev",
+    "scan": "find_named_dirs",
+    "find_names": ["node_modules"],
+    "max_depth": 6,
+    "description": "npm/yarn/pnpm dependency folders under common project roots. Safe to remove; reinstall with your package manager. Review paths before cleaning."
+  },
+  {
+    "id": "dev_venvs",
+    "label": "Python virtualenvs",
+    "paths": [
+      "~/Developer",
+      "~/Projects",
+      "~/src",
+      "~/code",
+      "~/Documents/GitHub",
+      "~/Desktop"
+    ],
+    "risk": "risky",
+    "group": "dev",
+    "scan": "find_named_dirs",
+    "find_names": [".venv", "venv"],
+    "max_depth": 6,
+    "description": "Python virtual environments under common project roots. Recreate with python -m venv or your project tool."
+  },
+  {
+    "id": "homebrew_caches",
+    "label": "Homebrew caches",
+    "paths": ["~/Library/Caches/Homebrew"],
+    "risk": "moderate",
+    "group": "dev",
+    "description": "Downloaded bottle and source caches. Homebrew re-downloads packages when needed."
+  },
+  {
+    "id": "homebrew_cleanup",
+    "label": "Homebrew cleanup",
+    "paths": ["~/Library/Caches/Homebrew"],
+    "risk": "manual",
+    "group": "dev",
+    "guide_command": "brew cleanup -s",
+    "description": "Removes old formula versions and scrubbed caches. Run the command in Terminal — MacSweeper does not execute brew. Size is not estimated here; use Homebrew caches above to Trash downloads."
+  },
+  {
+    "id": "docker_reclaim",
+    "label": "Docker reclaim",
+    "paths": [
+      "~/Library/Containers/com.docker.docker/Data",
+      "~/Library/Group Containers/group.com.docker"
+    ],
+    "risk": "manual",
+    "group": "dev",
+    "guide_command": "docker system prune -a",
+    "description": "Docker Desktop data. Most reclaimable space lives in the VM disk — use docker system prune. MacSweeper does not run Docker commands."
   }
 ]

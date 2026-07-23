@@ -14,9 +14,20 @@ actor ScanEngine {
     private let fileManager: FileManager
     private let homeDirectory: String
 
+    /// Relative home prefixes never entered during discovery walks.
+    private let discoverySkipPrefixes: [String] = [
+        "Library",
+        "Documents",
+        "Pictures",
+        "Music",
+        "Movies",
+        ".Trash",
+    ]
+
     private let sizeKeys: Set<URLResourceKey> = [
         .isRegularFileKey,
         .isDirectoryKey,
+        .isSymbolicLinkKey,
         .totalFileAllocatedSizeKey,
         .fileAllocatedSizeKey,
         .fileSizeKey,
@@ -39,11 +50,12 @@ actor ScanEngine {
     }
 
     /// Streams category results as they are measured. Cancel the consuming task to stop.
-    nonisolated func scanStream() -> AsyncThrowingStream<Progress, Error> {
+    /// When `includeDevMode` is false, rules with `group == "dev"` are skipped.
+    nonisolated func scanStream(includeDevMode: Bool = false) -> AsyncThrowingStream<Progress, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    try await self.runScan(yieldingTo: continuation)
+                    try await self.runScan(includeDevMode: includeDevMode, yieldingTo: continuation)
                 } catch is CancellationError {
                     continuation.finish(throwing: CancellationError())
                 } catch {
@@ -57,9 +69,9 @@ actor ScanEngine {
     }
 
     /// Convenience: collect all results (still cancelable via Task).
-    func scan() async throws -> [ScanResult] {
+    func scan(includeDevMode: Bool = false) async throws -> [ScanResult] {
         var results: [ScanResult] = []
-        for try await event in scanStream() {
+        for try await event in scanStream(includeDevMode: includeDevMode) {
             if case .category(let result) = event {
                 results.append(result)
             }
@@ -70,9 +82,14 @@ actor ScanEngine {
     // MARK: - Scan loop
 
     private func runScan(
+        includeDevMode: Bool,
         yieldingTo continuation: AsyncThrowingStream<Progress, Error>.Continuation
     ) async throws {
-        let categories = try loadCategories()
+        let allCategories = try loadCategories()
+        let categories = includeDevMode
+            ? allCategories
+            : allCategories.filter { !$0.isDevGroup }
+
         continuation.yield(.started(ruleCount: categories.count))
 
         var foundCount = 0
@@ -97,8 +114,20 @@ actor ScanEngine {
             return try measureEmptyTrash(category)
         }
 
+        if category.scan == .findNamedDirs {
+            return try measureFindNamedDirs(category)
+        }
+
+        // Manual guidance: show when a marker path exists, even at 0 measured bytes.
+        if category.risk == .manual, category.guideCommand != nil {
+            return try measureManualGuide(category)
+        }
+
+        return try measureFixedPaths(category)
+    }
+
+    private func measureFixedPaths(_ category: ScanCategory) throws -> ScanResult? {
         var scannedPaths: [ScannedPath] = []
-        // Hard links can appear under multiple paths; dedupe within a category.
         var seenHardLinks = Set<FileIdentity>()
 
         for pathString in category.paths {
@@ -123,6 +152,43 @@ actor ScanEngine {
             category: category,
             paths: scannedPaths.sorted { $0.byteCount > $1.byteCount },
             isSelected: category.risk.isSelectedByDefault
+        )
+    }
+
+    /// Manual + guide: appear when any configured path exists (size optional).
+    private func measureManualGuide(_ category: ScanCategory) throws -> ScanResult? {
+        var scannedPaths: [ScannedPath] = []
+        var seenHardLinks = Set<FileIdentity>()
+        var anyExists = false
+
+        for pathString in category.paths {
+            try Task.checkCancellation()
+
+            let expanded = expandHome(pathString)
+            var isDirectory: ObjCBool = false
+            guard fileManager.fileExists(atPath: expanded, isDirectory: &isDirectory) else {
+                continue
+            }
+            anyExists = true
+
+            // Homebrew cleanup guide: presence only (avoid double-counting cache size).
+            if category.id == "homebrew_cleanup" {
+                continue
+            }
+
+            let url = URL(fileURLWithPath: expanded, isDirectory: isDirectory.boolValue)
+            let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
+            if bytes > 0 {
+                scannedPaths.append(ScannedPath(path: expanded, byteCount: bytes))
+            }
+        }
+
+        guard anyExists else { return nil }
+
+        return ScanResult(
+            category: category,
+            paths: scannedPaths.sorted { $0.byteCount > $1.byteCount },
+            isSelected: false
         )
     }
 
@@ -177,6 +243,149 @@ actor ScanEngine {
             paths: scannedPaths.sorted { $0.byteCount > $1.byteCount },
             isSelected: category.risk.isSelectedByDefault
         )
+    }
+
+    // MARK: - Discovery
+
+    private func measureFindNamedDirs(_ category: ScanCategory) throws -> ScanResult? {
+        let names = Set(category.findNames ?? [])
+        guard !names.isEmpty else { return nil }
+
+        let maxDepth = category.maxDepth ?? 6
+        var foundURLs: [URL] = []
+
+        for pathString in category.paths {
+            try Task.checkCancellation()
+            let rootPath = expandHome(pathString)
+            var isDirectory: ObjCBool = false
+            guard fileManager.fileExists(atPath: rootPath, isDirectory: &isDirectory),
+                  isDirectory.boolValue
+            else {
+                continue
+            }
+            try collectNamedDirectories(
+                root: URL(fileURLWithPath: rootPath, isDirectory: true),
+                names: names,
+                maxDepth: maxDepth,
+                into: &foundURLs
+            )
+        }
+
+        guard !foundURLs.isEmpty else { return nil }
+
+        var scannedPaths: [ScannedPath] = []
+        var seenHardLinks = Set<FileIdentity>()
+
+        for url in foundURLs {
+            try Task.checkCancellation()
+            let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
+            guard bytes > 0 else { continue }
+            scannedPaths.append(ScannedPath(path: url.path, byteCount: bytes))
+        }
+
+        guard !scannedPaths.isEmpty else { return nil }
+
+        return ScanResult(
+            category: category,
+            paths: scannedPaths.sorted { $0.byteCount > $1.byteCount },
+            isSelected: category.risk.isSelectedByDefault
+        )
+    }
+
+    private func collectNamedDirectories(
+        root: URL,
+        names: Set<String>,
+        maxDepth: Int,
+        into found: inout [URL]
+    ) throws {
+        var stack: [(url: URL, depth: Int)] = [(root, 0)]
+        var visited = 0
+
+        while let current = stack.popLast() {
+            visited += 1
+            if visited.isMultiple(of: 64) {
+                try Task.checkCancellation()
+            }
+
+            let contents: [URL]
+            do {
+                contents = try fileManager.contentsOfDirectory(
+                    at: current.url,
+                    includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .nameKey],
+                    options: []
+                )
+            } catch {
+                continue
+            }
+
+            for child in contents {
+                let values = try? child.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .nameKey])
+                let isSymlink = values?.isSymbolicLink == true
+                let name = values?.name ?? child.lastPathComponent
+
+                var childIsDirectory: ObjCBool = false
+                guard fileManager.fileExists(atPath: child.path, isDirectory: &childIsDirectory),
+                      childIsDirectory.boolValue
+                else {
+                    continue
+                }
+
+                if names.contains(name) {
+                    if isSymlink {
+                        let resolved = child.resolvingSymlinksInPath()
+                        guard isPathUnderHome(resolved.path), !isProtectedDiscoveryPath(resolved.path) else {
+                            continue
+                        }
+                        found.append(resolved)
+                    } else {
+                        guard !isProtectedDiscoveryPath(child.path) else { continue }
+                        found.append(child)
+                    }
+                    // Do not descend into matched dirs (no nested node_modules).
+                    continue
+                }
+
+                // Skip other hidden dirs (keep walking non-hidden; allow seeking .venv via names).
+                if name.hasPrefix(".") { continue }
+                if isSymlink { continue }
+                if current.depth < maxDepth, shouldDescend(into: child) {
+                    stack.append((child, current.depth + 1))
+                }
+            }
+        }
+    }
+
+    private func shouldDescend(into url: URL) -> Bool {
+        if isProtectedDiscoveryPath(url.path) { return false }
+        // Never walk into Library even under Desktop/project trees via symlink.
+        let name = url.lastPathComponent
+        if name == "Library" || name == "node_modules" || name == ".git" {
+            return false
+        }
+        return true
+    }
+
+    private func isPathUnderHome(_ path: String) -> Bool {
+        let standardized = (path as NSString).standardizingPath
+        return standardized == homeDirectory || standardized.hasPrefix(homeDirectory + "/")
+    }
+
+    private func isProtectedDiscoveryPath(_ path: String) -> Bool {
+        let standardized = (path as NSString).standardizingPath
+        guard isPathUnderHome(standardized) else { return true }
+        guard standardized != homeDirectory else { return true }
+
+        let relative = String(standardized.dropFirst(homeDirectory.count + 1))
+        for prefix in discoverySkipPrefixes {
+            if relative == prefix || relative.hasPrefix(prefix + "/") {
+                // Allow Documents/GitHub specifically (it's a configured root).
+                if prefix == "Documents", relative == "Documents/GitHub" || relative.hasPrefix("Documents/GitHub/") {
+                    return false
+                }
+                return true
+            }
+        }
+        return false
     }
 
     // MARK: - Path helpers

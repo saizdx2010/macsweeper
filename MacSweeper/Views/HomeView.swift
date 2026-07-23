@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var auditLog: AuditLogService
 
+    @AppStorage("includeDevMode") private var includeDevMode = false
     @State private var snapshot: DiskSpaceService.Snapshot?
     @State private var path = NavigationPath()
 
@@ -40,6 +41,18 @@ struct HomeView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
 
+                VStack(spacing: 6) {
+                    Toggle("Include Dev mode", isOn: $includeDevMode)
+                        .toggleStyle(.switch)
+                        .frame(maxWidth: 280)
+
+                    Text("Scans project folders for node_modules and virtualenvs, plus Homebrew and Docker guidance.")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 300)
+                }
+
                 Text(lastCleanLabel)
                     .font(.footnote)
                     .foregroundStyle(.tertiary)
@@ -52,7 +65,7 @@ struct HomeView: View {
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
                 case .results:
-                    ScanResultsView()
+                    ScanResultsView(includeDevMode: includeDevMode)
                 case .detail(let result):
                     CategoryDetailView(result: result)
                 case .clean(let results):

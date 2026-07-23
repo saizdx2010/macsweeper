@@ -6,6 +6,12 @@ enum CleanupAction: String, Codable, Hashable {
     case emptyTrash = "empty_trash"
 }
 
+/// How the scan engine locates paths for a category.
+enum ScanStrategy: String, Codable, Hashable {
+    case fixed
+    case findNamedDirs = "find_named_dirs"
+}
+
 /// A cleanup rule loaded from `cleanup-rules.json`.
 struct ScanCategory: Identifiable, Codable, Hashable {
     let id: String
@@ -15,9 +21,25 @@ struct ScanCategory: Identifiable, Codable, Hashable {
     let description: String
     /// Defaults to move-to-Trash when omitted from JSON.
     var action: CleanupAction = .moveToTrash
+    /// `"dev"` marks Dev-section items; `nil` = core.
+    var group: String?
+    /// Defaults to fixed path measurement when omitted.
+    var scan: ScanStrategy = .fixed
+    /// Directory names to find when `scan == .findNamedDirs`.
+    var findNames: [String]?
+    /// Max walk depth for discovery (from each root). Defaults to 6.
+    var maxDepth: Int?
+    /// Shell command shown for Manual guidance (copy to clipboard).
+    var guideCommand: String?
+
+    /// Whether this category belongs in the Dev results section.
+    var isDevGroup: Bool { group == "dev" }
 
     private enum CodingKeys: String, CodingKey {
-        case id, label, paths, risk, description, action
+        case id, label, paths, risk, description, action, group, scan
+        case findNames = "find_names"
+        case maxDepth = "max_depth"
+        case guideCommand = "guide_command"
     }
 
     init(
@@ -26,7 +48,12 @@ struct ScanCategory: Identifiable, Codable, Hashable {
         paths: [String],
         risk: RiskLevel,
         description: String,
-        action: CleanupAction = .moveToTrash
+        action: CleanupAction = .moveToTrash,
+        group: String? = nil,
+        scan: ScanStrategy = .fixed,
+        findNames: [String]? = nil,
+        maxDepth: Int? = nil,
+        guideCommand: String? = nil
     ) {
         self.id = id
         self.label = label
@@ -34,6 +61,11 @@ struct ScanCategory: Identifiable, Codable, Hashable {
         self.risk = risk
         self.description = description
         self.action = action
+        self.group = group
+        self.scan = scan
+        self.findNames = findNames
+        self.maxDepth = maxDepth
+        self.guideCommand = guideCommand
     }
 
     init(from decoder: Decoder) throws {
@@ -44,5 +76,10 @@ struct ScanCategory: Identifiable, Codable, Hashable {
         risk = try container.decode(RiskLevel.self, forKey: .risk)
         description = try container.decode(String.self, forKey: .description)
         action = try container.decodeIfPresent(CleanupAction.self, forKey: .action) ?? .moveToTrash
+        group = try container.decodeIfPresent(String.self, forKey: .group)
+        scan = try container.decodeIfPresent(ScanStrategy.self, forKey: .scan) ?? .fixed
+        findNames = try container.decodeIfPresent([String].self, forKey: .findNames)
+        maxDepth = try container.decodeIfPresent(Int.self, forKey: .maxDepth)
+        guideCommand = try container.decodeIfPresent(String.self, forKey: .guideCommand)
     }
 }

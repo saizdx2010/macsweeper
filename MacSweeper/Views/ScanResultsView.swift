@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ScanResultsView: View {
+    let includeDevMode: Bool
+
     @State private var results: [ScanResult] = []
     @State private var isScanning = false
     @State private var wasCancelled = false
@@ -10,6 +12,14 @@ struct ScanResultsView: View {
     @State private var scanTask: Task<Void, Never>?
 
     private let engine = ScanEngine()
+
+    private var coreIndices: [Int] {
+        results.indices.filter { !results[$0].category.isDevGroup }
+    }
+
+    private var devIndices: [Int] {
+        results.indices.filter { results[$0].category.isDevGroup }
+    }
 
     private var selectedBytes: Int64 {
         results.filter(\.isSelected).reduce(0) { $0 + $1.totalBytes }
@@ -79,25 +89,18 @@ struct ScanResultsView: View {
                     }
 
                     List {
-                        ForEach($results) { $result in
-                            NavigationLink(value: AppRoute.detail(result)) {
-                                HStack {
-                                    Toggle("", isOn: $result.isSelected)
-                                        .labelsHidden()
-                                        .disabled(result.category.risk == .manual)
+                        if !coreIndices.isEmpty {
+                            Section("Reclaimable") {
+                                ForEach(coreIndices, id: \.self) { index in
+                                    categoryRow($results[index])
+                                }
+                            }
+                        }
 
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(result.category.label)
-                                        Text(result.category.risk.displayName)
-                                            .font(.caption)
-                                            .foregroundStyle(riskColor(result.category.risk))
-                                    }
-
-                                    Spacer()
-
-                                    Text(ByteCountFormatter.string(fromByteCount: result.totalBytes, countStyle: .file))
-                                        .monospacedDigit()
-                                        .foregroundStyle(.secondary)
+                        if !devIndices.isEmpty {
+                            Section("Dev") {
+                                ForEach(devIndices, id: \.self) { index in
+                                    categoryRow($results[index])
                                 }
                             }
                         }
@@ -143,6 +146,35 @@ struct ScanResultsView: View {
         }
     }
 
+    @ViewBuilder
+    private func categoryRow(_ result: Binding<ScanResult>) -> some View {
+        NavigationLink(value: AppRoute.detail(result.wrappedValue)) {
+            HStack {
+                Toggle("", isOn: result.isSelected)
+                    .labelsHidden()
+                    .disabled(result.wrappedValue.category.risk == .manual)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(result.wrappedValue.category.label)
+                    Text(result.wrappedValue.category.risk.displayName)
+                        .font(.caption)
+                        .foregroundStyle(riskColor(result.wrappedValue.category.risk))
+                }
+
+                Spacer()
+
+                if result.wrappedValue.category.risk == .manual, result.wrappedValue.totalBytes == 0 {
+                    Text("Guide")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text(ByteCountFormatter.string(fromByteCount: result.wrappedValue.totalBytes, countStyle: .file))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
     private var scanProgressLabel: String {
         if loadedRuleCount > 0 {
             return "Scanning rules… \(scannedRuleCount)/\(loadedRuleCount)"
@@ -172,12 +204,14 @@ struct ScanResultsView: View {
         loadedRuleCount = 0
         isScanning = true
 
+        let includeDev = includeDevMode
         scanTask = Task {
             do {
                 let categories = try await engine.loadCategories()
-                loadedRuleCount = categories.count
+                let active = includeDev ? categories : categories.filter { !$0.isDevGroup }
+                loadedRuleCount = active.count
 
-                for try await event in engine.scanStream() {
+                for try await event in engine.scanStream(includeDevMode: includeDev) {
                     try Task.checkCancellation()
                     switch event {
                     case .started(let ruleCount):
@@ -217,6 +251,6 @@ struct ScanResultsView: View {
 
 #Preview {
     NavigationStack {
-        ScanResultsView()
+        ScanResultsView(includeDevMode: false)
     }
 }

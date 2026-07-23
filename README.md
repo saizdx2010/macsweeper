@@ -6,7 +6,7 @@ Inspired by [ncdu](https://dev.yorhel.nl/ncdu) and [mac-cleanup-go](https://gith
 
 ## Status
 
-Phase 3: cancelable streaming scan, hard-link-aware sizes, and optional Empty Trash with Full Disk Access guidance.
+Phase 4: opt-in Dev mode — discover `node_modules` / virtualenvs under common project roots, Homebrew cache cleanup, and Manual Docker / Homebrew guidance.
 
 ## Requirements
 

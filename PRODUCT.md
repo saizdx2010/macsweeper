@@ -49,9 +49,11 @@ Off by default / opt-in:
 - Old files in `~/Downloads` (risk: **Moderate** — user reviews before clean)
 - Empty Trash (optional, **off by default**; needs Full Disk Access)
 
-Deferred to [Phase 4 — Dev mode](#build-phases):
+Deferred to [Phase 4 — Dev mode](#build-phases) (shipped as opt-in):
 
-- `node_modules`, `.venv`, Docker / Homebrew cleanup
+- `node_modules`, `.venv` / `venv` under common project roots
+- Homebrew caches (Trash) + Manual `brew cleanup` guidance
+- Manual Docker reclaim guidance (`docker system prune`)
 
 ### Never Touch (v1 exclusions)
 
@@ -286,6 +288,15 @@ In-app copy: *"We need this to empty Trash. Files never leave your Mac."*
 | **2** | Move selected items to Trash; confirm flow; undo hint + session audit log | +1 week |
 | **3** | Polish: cancelable scan, better size accuracy, optional FDA empty-Trash | +1 week |
 | **4** | Dev mode (`node_modules`, Docker, Homebrew) — opt-in section | +2 weeks |
+
+**Phase 4 decisions:**
+
+- Off by default (Home toggle: “Include Dev mode”).
+- Discovery roots only: `~/Developer`, `~/Projects`, `~/src`, `~/code`, `~/Documents/GitHub`, `~/Desktop` (depth ≤ 6; no nested `node_modules`).
+- `node_modules` / virtualenvs: Risky, Trash, unchecked.
+- Homebrew caches: Moderate, Trash.
+- Docker reclaim and Homebrew deep cleanup: Manual rows with copyable commands — no shell-out.
+- No full-home walk, user-picked folders, or sudo/system paths.
 | **Later** | ncdu-style disk treemap (optional, not on the critical path) | TBD |
 
 ### Phase 1 non-goals

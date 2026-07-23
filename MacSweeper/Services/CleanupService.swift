@@ -53,6 +53,13 @@ actor CleanupService {
         "Library/Cookies",
     ]
 
+    /// Dev-mode discovery targets allowed under otherwise-protected roots (Documents/Desktop).
+    private let allowedDevCleanupDirectoryNames: Set<String> = [
+        "node_modules",
+        ".venv",
+        "venv",
+    ]
+
     init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
         self.homeDirectory = NSHomeDirectory()
@@ -263,8 +270,15 @@ actor CleanupService {
         let relative = String(standardized.dropFirst(homeDirectory.count + 1))
         if relative == "Library" { return false }
 
+        let lastComponent = (relative as NSString).lastPathComponent
+        let isDevCleanupDir = allowedDevCleanupDirectoryNames.contains(lastComponent)
+
         for prefix in protectedPrefixes {
             if relative == prefix || relative.hasPrefix(prefix + "/") {
+                // Allow only named Dev cleanup dirs under Documents / Desktop project roots.
+                if isDevCleanupDir, prefix == "Documents" || prefix == "Desktop" {
+                    return true
+                }
                 return false
             }
         }
