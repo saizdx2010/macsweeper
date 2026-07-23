@@ -290,6 +290,18 @@ In-app copy: *"We need this to empty Trash. Files never leave your Mac."*
 | **4** | Dev mode (`node_modules`, Docker, Homebrew) — opt-in section | +2 weeks |
 | **5** | Selection & trust polish: per-item checkboxes, Downloads filters, history, Settings | Done |
 | **6** | Broader reclaim rules + custom Dev scan folders (still Trash-safe / Manual for brew·Docker) | Done |
+| **7** | ncdu-style disk browse / treemap (“where did my space go?”) | TBD |
+| **8** | Ship & sustain: notarized `.app` (or MAS), tip jar, safety tests | TBD |
+
+### High-ROI priorities (post Phase 4)
+
+These three ideas finish the clean loop for real users. Prefer them over treemap or distribution polish until they ship.
+
+| Idea | Why users care | Phase |
+|------|----------------|-------|
+| **Per-item selection + Downloads age/size filters** | Avoid “clean half my Downloads by accident” anxiety | **5** (Done) |
+| **Custom Dev scan roots** | Real projects aren’t only under `~/Developer` | **6** (Done) |
+| **In-app cleanup history** | Makes the Undo / Trash promise feel durable across days | **5** (Done) |
 
 **Phase 4 decisions:**
 
@@ -314,7 +326,9 @@ In-app copy: *"We need this to empty Trash. Files never leave your Mac."*
 - Custom Dev folders via Settings (bookmark once; must stay under home).
 - Docker / deep brew remain Manual guides only.
 
-**Later:** ncdu-style disk treemap (optional, not on the critical path).
+**Phase 7 (Later):** ncdu-style browse / treemap over home or a chosen folder; optional jump from a large path into cleanup rules. Not on the critical path — ship after High-ROI items feel finished.
+
+**Phase 8 (Later):** notarized direct download vs Mac App Store; tip jar once the clean loop feels trustworthy; unit tests around allowlists, exclusions, and Trash moves.
 
 ### Phase 1 non-goals
 
@@ -346,10 +360,10 @@ In-app copy: *"We need this to empty Trash. Files never leave your Mac."*
 ## Open Questions
 
 - [ ] App name finalization (MacSweeper, TidyMac, Sweep, ClearDesk?)
-- [ ] Distribution: notarized direct download vs Mac App Store?
-- [ ] Monetization timing: free forever vs tip jar after Phase 2?
-- [ ] Code signing / notarization setup for distribution
-- [ ] Persist audit log across launches, or session-only?
+- [ ] Distribution: notarized direct download vs Mac App Store? (Phase 8)
+- [ ] Monetization timing: free forever vs tip jar after High-ROI polish? (Phase 8)
+- [ ] Code signing / notarization setup for distribution (Phase 8)
+- [x] Persist audit log across launches — optional via Settings “Keep cleanup history” (Phase 5)
 
 ## License
 
