@@ -4,6 +4,8 @@ import SwiftUI
 enum MSTheme {
     /// Calm teal-blue brand accent (not system purple).
     static let accent = Color(red: 0.12, green: 0.55, blue: 0.62)
+    /// Warm amber when disk pressure is high (≥85% used).
+    static let pressure = Color(red: 0.82, green: 0.48, blue: 0.18)
 
     static let canvas = Color(nsColor: .windowBackgroundColor)
     static let cardFill = Color(nsColor: .controlBackgroundColor)

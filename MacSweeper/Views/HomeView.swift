@@ -8,14 +8,20 @@ struct HomeView: View {
     @State private var snapshot: DiskSpaceService.Snapshot?
     @State private var path = NavigationPath()
     @State private var ringDrawn = false
+    @State private var hasFullDiskAccess = true
 
     private let diskSpace = DiskSpaceService()
+    private let diskPressureThreshold = 0.85
 
     private static let relativeFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
         return formatter
     }()
+
+    private var isDiskUnderPressure: Bool {
+        (snapshot?.usedFraction ?? 0) >= diskPressureThreshold
+    }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -61,7 +67,7 @@ struct HomeView: View {
                         usedFraction: ringDrawn ? (snapshot?.usedFraction ?? 0) : 0,
                         lineWidth: MSTheme.heroRingLineWidth,
                         size: MSTheme.heroRingSize,
-                        progressColor: MSTheme.accent
+                        progressColor: isDiskUnderPressure ? MSTheme.pressure : MSTheme.accent
                     ) {
                         if let snapshot {
                             VStack(spacing: 4) {
@@ -81,16 +87,22 @@ struct HomeView: View {
                     .animation(.easeOut(duration: 0.8), value: ringDrawn)
 
                     if let snapshot {
-                        Text("\(Int((snapshot.usedFraction * 100).rounded()))% used")
+                        Text(diskContextLabel(for: snapshot))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            .monospacedDigit()
                     }
 
-                    Text("Reclaim space safely — preview before anything moves")
+                    Text(tagline)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: 340)
+
+                    Text("caches · logs · Xcode · Trash")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .multilineTextAlignment(.center)
 
                     PrimaryCTANavigationLink(
                         title: "Scan My Mac",
@@ -106,7 +118,7 @@ struct HomeView: View {
                         .toggleStyle(.switch)
                         .frame(maxWidth: 320)
 
-                    Text("Scans project folders for node_modules and virtualenvs, plus Homebrew and Docker guidance.")
+                    Text(devModeCaption)
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                         .multilineTextAlignment(.center)
@@ -115,6 +127,15 @@ struct HomeView: View {
                     Text(lastCleanLabel)
                         .font(.footnote)
                         .foregroundStyle(.tertiary)
+
+                    if !hasFullDiskAccess {
+                        Button("Full Disk Access needed → Open Settings") {
+                            FullDiskAccessService.openSystemSettings()
+                        }
+                        .buttonStyle(.plain)
+                        .font(.footnote)
+                        .foregroundStyle(MSTheme.accent)
+                    }
                 }
                 .padding(.bottom, 8)
             }
@@ -123,14 +144,33 @@ struct HomeView: View {
         .frame(minWidth: 640, minHeight: 480)
         .navigationBarBackButtonHidden(true)
         .task {
-            snapshot = diskSpace.currentSnapshot()
+            refreshHomeState()
             withAnimation(.easeOut(duration: 0.8)) {
                 ringDrawn = true
+            }
+        }
+        .onChange(of: path.count) { _, count in
+            if count == 0 {
+                refreshHomeState()
             }
         }
         .onChange(of: auditLog.lastClean) { _, _ in
             snapshot = diskSpace.currentSnapshot()
         }
+    }
+
+    private var tagline: String {
+        if isDiskUnderPressure {
+            return "Disk getting tight — scan to see what you can reclaim"
+        }
+        return "Reclaim space safely — preview before anything moves"
+    }
+
+    private var devModeCaption: String {
+        if includeDevMode {
+            return "Also scans: node_modules · venvs · Homebrew · Docker"
+        }
+        return "Scans project folders for node_modules and virtualenvs, plus Homebrew and Docker guidance."
     }
 
     private var lastCleanLabel: String {
@@ -139,7 +179,19 @@ struct HomeView: View {
         }
         let size = ByteCountFormatter.string(fromByteCount: last.freedBytes, countStyle: .file)
         let when = Self.relativeFormatter.localizedString(for: last.date, relativeTo: Date())
-        return "Last clean: freed \(size) · \(when)"
+        return "Last clean: \(size) · \(last.itemCount) items · \(when)"
+    }
+
+    private func diskContextLabel(for snapshot: DiskSpaceService.Snapshot) -> String {
+        let used = ByteCountFormatter.string(fromByteCount: snapshot.usedBytes, countStyle: .file)
+        let total = ByteCountFormatter.string(fromByteCount: snapshot.totalBytes, countStyle: .file)
+        let pct = Int((snapshot.usedFraction * 100).rounded())
+        return "\(used) used of \(total) · \(pct)%"
+    }
+
+    private func refreshHomeState() {
+        snapshot = diskSpace.currentSnapshot()
+        hasFullDiskAccess = FullDiskAccessService.isGranted()
     }
 }
 
