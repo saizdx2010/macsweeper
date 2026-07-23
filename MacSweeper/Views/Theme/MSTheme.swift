@@ -17,6 +17,9 @@ enum MSTheme {
     static let sectionSpacing: CGFloat = 20
     static let heroRingSize: CGFloat = 220
     static let heroRingLineWidth: CGFloat = 14
+    /// Smaller ring for Home split layout (Scanning keeps `heroRingSize`).
+    static let homeRingSize: CGFloat = 176
+    static let homeRingLineWidth: CGFloat = 12
 
     static let displayFont = Font.system(size: 36, weight: .semibold, design: .rounded)
     static let wordmarkFont = Font.system(size: 28, weight: .bold, design: .rounded)

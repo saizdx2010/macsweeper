@@ -56,88 +56,25 @@ struct HomeView: View {
             StageBackground()
 
             VStack(spacing: 0) {
-                Spacer(minLength: 12)
+                Text("MacSweeper")
+                    .font(MSTheme.wordmarkFont)
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 4)
 
-                VStack(spacing: 20) {
-                    Text("MacSweeper")
-                        .font(MSTheme.wordmarkFont)
-                        .foregroundStyle(.primary)
-
-                    DiskRingView(
-                        usedFraction: ringDrawn ? (snapshot?.usedFraction ?? 0) : 0,
-                        lineWidth: MSTheme.heroRingLineWidth,
-                        size: MSTheme.heroRingSize,
-                        progressColor: isDiskUnderPressure ? MSTheme.pressure : MSTheme.accent
-                    ) {
-                        if let snapshot {
-                            VStack(spacing: 4) {
-                                Text(ByteCountFormatter.string(fromByteCount: snapshot.freeBytes, countStyle: .file))
-                                    .font(.system(size: 34, weight: .semibold, design: .rounded))
-                                    .monospacedDigit()
-                                Text("free")
-                                    .font(.title3)
-                                    .foregroundStyle(.secondary)
-                            }
-                        } else {
-                            Text("—")
-                                .font(MSTheme.displayFont)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .animation(.easeOut(duration: 0.8), value: ringDrawn)
-
-                    if let snapshot {
-                        Text(diskContextLabel(for: snapshot))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                    }
-
-                    Text(tagline)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: 340)
-
-                    Text("caches · logs · Xcode · Trash")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .multilineTextAlignment(.center)
-
-                    PrimaryCTANavigationLink(
-                        title: "Scan My Mac",
-                        value: AppRoute.scanning
-                    )
-                    .frame(maxWidth: 320)
+                ViewThatFits(in: .horizontal) {
+                    splitHero
+                    stackedHero
                 }
+                .padding(.top, 24)
 
-                Spacer(minLength: 20)
+                coverageBand
+                    .padding(.top, 28)
 
-                VStack(spacing: 10) {
-                    Toggle("Include Dev mode", isOn: $includeDevMode)
-                        .toggleStyle(.switch)
-                        .frame(maxWidth: 320)
+                footerZone
+                    .padding(.top, 20)
 
-                    Text(devModeCaption)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: 360)
-
-                    Text(lastCleanLabel)
-                        .font(.footnote)
-                        .foregroundStyle(.tertiary)
-
-                    if !hasFullDiskAccess {
-                        Button("Full Disk Access needed → Open Settings") {
-                            FullDiskAccessService.openSystemSettings()
-                        }
-                        .buttonStyle(.plain)
-                        .font(.footnote)
-                        .foregroundStyle(MSTheme.accent)
-                    }
-                }
-                .padding(.bottom, 8)
+                Spacer(minLength: 8)
             }
             .padding(MSTheme.pagePadding)
         }
@@ -158,6 +95,183 @@ struct HomeView: View {
             snapshot = diskSpace.currentSnapshot()
         }
     }
+
+    // MARK: - Hero layouts
+
+    private var splitHero: some View {
+        HStack(alignment: .center, spacing: 28) {
+            diskRing
+            infoColumn(alignment: .leading)
+                .frame(maxWidth: 360, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var stackedHero: some View {
+        VStack(spacing: 20) {
+            diskRing
+            infoColumn(alignment: .center)
+                .frame(maxWidth: 360)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var diskRing: some View {
+        DiskRingView(
+            usedFraction: ringDrawn ? (snapshot?.usedFraction ?? 0) : 0,
+            lineWidth: MSTheme.homeRingLineWidth,
+            size: MSTheme.homeRingSize,
+            progressColor: isDiskUnderPressure ? MSTheme.pressure : MSTheme.accent
+        ) {
+            if let snapshot {
+                VStack(spacing: 4) {
+                    Text(ByteCountFormatter.string(fromByteCount: snapshot.freeBytes, countStyle: .file))
+                        .font(.system(size: 26, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                    Text("free")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Text("—")
+                    .font(MSTheme.titleFont)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .animation(.easeOut(duration: 0.8), value: ringDrawn)
+    }
+
+    private func infoColumn(alignment: HorizontalAlignment) -> some View {
+        let textAlignment: TextAlignment = alignment == .leading ? .leading : .center
+        return VStack(alignment: alignment, spacing: 12) {
+            if let snapshot {
+                Text(diskContextLabel(for: snapshot))
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .monospacedDigit()
+                    .multilineTextAlignment(textAlignment)
+            }
+
+            Text(tagline)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(textAlignment)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("caches · logs · Xcode · Trash")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(textAlignment)
+
+            PrimaryCTANavigationLink(
+                title: "Scan My Mac",
+                value: AppRoute.scanning
+            )
+            .frame(maxWidth: 280)
+            .padding(.top, 4)
+        }
+    }
+
+    // MARK: - Coverage band
+
+    private var coverageBand: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("What a scan looks for")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 16) {
+                    ForEach(coverageColumns) { column in
+                        coverageColumnView(column)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(coverageColumns) { column in
+                        coverageColumnView(column)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var coverageColumns: [CoverageColumn] {
+        [
+            CoverageColumn(
+                id: "safe",
+                title: "Safe",
+                blurb: "Regenerable caches, logs, Quick Look"
+            ),
+            CoverageColumn(
+                id: "review",
+                title: "Review",
+                blurb: "Downloads, Mail, Xcode leftovers"
+            ),
+            CoverageColumn(
+                id: "manual",
+                title: "Manual",
+                blurb: manualCoverageBlurb
+            ),
+        ]
+    }
+
+    private var manualCoverageBlurb: String {
+        if includeDevMode {
+            return "Homebrew cleanup · Docker prune"
+        }
+        return "Copy-and-run commands when needed"
+    }
+
+    private func coverageColumnView(_ column: CoverageColumn) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(column.title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
+            Text(column.blurb)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.leading)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Footer
+
+    private var footerZone: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Divider()
+                .opacity(0.5)
+
+            Toggle("Include Dev mode", isOn: $includeDevMode)
+                .toggleStyle(.switch)
+
+            Text(devModeCaption)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(lastCleanLabel)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            if !hasFullDiskAccess {
+                Button("Full Disk Access needed → Open Settings") {
+                    FullDiskAccessService.openSystemSettings()
+                }
+                .buttonStyle(.plain)
+                .font(.footnote)
+                .foregroundStyle(MSTheme.accent)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.bottom, 4)
+    }
+
+    // MARK: - Labels
 
     private var tagline: String {
         if isDiskUnderPressure {
@@ -193,6 +307,12 @@ struct HomeView: View {
         snapshot = diskSpace.currentSnapshot()
         hasFullDiskAccess = FullDiskAccessService.isGranted()
     }
+}
+
+private struct CoverageColumn: Identifiable {
+    let id: String
+    let title: String
+    let blurb: String
 }
 
 enum AppRoute: Hashable {
