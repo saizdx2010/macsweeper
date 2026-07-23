@@ -9,11 +9,28 @@ struct DiskBrowseView: View {
     @State private var categories: [ScanCategory] = []
     @State private var showScanNeededAlert = false
     @State private var pendingCleanLabel = ""
+    @State private var sortMode: BrowseSortMode = .size
 
     init(session: ScanSession, rootPath: String?, path: Binding<NavigationPath>) {
         self.session = session
         self._path = path
         _browse = StateObject(wrappedValue: DiskBrowseService(rootPath: rootPath))
+    }
+
+    private var sortedEntries: [DiskBrowseEntry] {
+        switch sortMode {
+        case .name:
+            return browse.entries.sorted {
+                $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        case .size:
+            return browse.entries.sorted { lhs, rhs in
+                let lb = lhs.byteCount ?? -1
+                let rb = rhs.byteCount ?? -1
+                if lb != rb { return lb > rb }
+                return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+            }
+        }
     }
 
     var body: some View {
@@ -75,7 +92,7 @@ struct DiskBrowseView: View {
                             Label("Up", systemImage: "chevron.up")
                                 .font(.callout.weight(.medium))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.msActionable)
                         .foregroundStyle(MSTheme.accent)
                     }
 
@@ -104,15 +121,42 @@ struct DiskBrowseView: View {
                     .foregroundStyle(.secondary)
             } else {
                 VStack(spacing: 0) {
-                    ForEach(Array(browse.entries.enumerated()), id: \.element.id) { index, entry in
+                    sortHeader
+                        .padding(.bottom, 8)
+
+                    Divider().opacity(0.35)
+
+                    ForEach(Array(sortedEntries.enumerated()), id: \.element.id) { index, entry in
                         entryRow(entry)
-                        if index < browse.entries.count - 1 {
+                        if index < sortedEntries.count - 1 {
                             Divider().opacity(0.35)
                         }
                     }
                 }
             }
         }
+    }
+
+    private var sortHeader: some View {
+        HStack(spacing: 10) {
+            Text("Sort")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 8)
+
+            Picker("Sort", selection: $sortMode) {
+                ForEach(BrowseSortMode.allCases) { mode in
+                    Text(mode.label).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(maxWidth: 180)
+            .accessibilityLabel("Sort by")
+        }
+        .padding(.horizontal, 6)
+        .padding(.top, 2)
     }
 
     private func entryRow(_ entry: DiskBrowseEntry) -> some View {
@@ -142,7 +186,7 @@ struct DiskBrowseView: View {
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(MSTheme.accent)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.msActionable)
                     }
                 }
 
@@ -182,7 +226,8 @@ struct DiskBrowseView: View {
             .frame(height: 4)
         }
         .padding(.vertical, 8)
-        .contentShape(Rectangle())
+        .padding(.horizontal, 6)
+        .actionableHover(isEnabled: entry.canDrillIn, cornerRadius: 8)
         .onTapGesture {
             if entry.canDrillIn {
                 browse.drill(into: entry)
@@ -252,6 +297,20 @@ struct DiskBrowseView: View {
             categories = try await ScanEngine().loadCategories()
         } catch {
             categories = []
+        }
+    }
+}
+
+private enum BrowseSortMode: String, CaseIterable, Identifiable {
+    case name
+    case size
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .name: return "Name"
+        case .size: return "Size"
         }
     }
 }
