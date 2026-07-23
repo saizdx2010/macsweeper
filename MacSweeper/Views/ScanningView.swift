@@ -9,6 +9,10 @@ struct ScanningView: View {
     @State private var ringDrawn = false
     @State private var didStart = false
 
+    private var canGoBack: Bool {
+        session.phase != .scanning
+    }
+
     var body: some View {
         ZStack {
             StageBackground()
@@ -61,7 +65,7 @@ struct ScanningView: View {
                                 .frame(maxWidth: 360)
                         }
                         PrimaryCTAButton(title: "Back to Home") {
-                            path = NavigationPath()
+                            AppNavigation.popToRoot($path)
                         }
                         .frame(maxWidth: 280)
                     }
@@ -71,7 +75,11 @@ struct ScanningView: View {
             }
             .padding(MSTheme.pagePadding)
         }
-        .navigationBarBackButtonHidden(session.phase == .scanning)
+        .appDestinationChrome(
+            title: "Scan",
+            showsBack: canGoBack,
+            onBack: { AppNavigation.popToRoot($path) }
+        )
         .onAppear {
             withAnimation(.easeOut(duration: 0.6)) {
                 ringDrawn = true
@@ -82,6 +90,7 @@ struct ScanningView: View {
         }
         .onChange(of: session.phase) { _, newPhase in
             guard newPhase == .finished else { return }
+            // Replace theater with results (Home remains under the stack).
             path = NavigationPath()
             path.append(AppRoute.results)
         }

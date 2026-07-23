@@ -63,7 +63,11 @@ struct CleanFlowView: View {
                 }
             }
         }
-        .navigationTitle("Clean")
+        .appDestinationChrome(
+            title: "Clean",
+            showsBack: phase == .confirm,
+            onBack: { AppNavigation.popLast($navigationPath) }
+        )
         .confirmationDialog(
             confirmationTitle,
             isPresented: $showConfirmation,
@@ -169,7 +173,7 @@ struct CleanFlowView: View {
                 Divider().opacity(0.5)
                 HStack(spacing: 12) {
                     Button("Cancel") {
-                        navigationPath.removeLast()
+                        AppNavigation.popLast($navigationPath)
                     }
                     Spacer()
                     PrimaryCTAButton(title: primaryActionTitle, isEnabled: !results.isEmpty) {
@@ -364,7 +368,7 @@ struct CleanFlowView: View {
     }
 
     private func dismissToHome() {
-        navigationPath = NavigationPath()
+        AppNavigation.popToRoot($navigationPath)
     }
 }
 

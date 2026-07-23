@@ -27,6 +27,7 @@
 		C5259E6D5AA208680DA72AF5 /* cleanup-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = F74B6AAA7D166E0BA57A1EBE /* cleanup-rules.json */; };
 		CB29CC1C764F0BE791A46E19 /* RiskLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2CCB0413DD8BB7F38B70A5 /* RiskLevel.swift */; };
 		D0281004C70D6D8596E30015 /* ScanSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEEEBA317F2E6766DEDA0F7 /* ScanSession.swift */; };
+		DC8DD40FBD8796026CBBB232 /* NavigationChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88941B95C83E63C7DEDDD0E1 /* NavigationChrome.swift */; };
 		E36DF4C40B093DBF87D5A08E /* ScanningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F34E37FBB0DDB91BDEACF /* ScanningView.swift */; };
 		EA6EA457A0E153B80E3270AB /* CategoryRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D342DE9604B618F0E6F7B7F /* CategoryRowView.swift */; };
 		FA1CC27A472F42AB7F8E47BD /* ScanResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FE54B1BAE4E12DD6D53D25 /* ScanResultsView.swift */; };
@@ -48,6 +49,7 @@
 		72DD82245B6A9DDAD0DFBD87 /* DiskRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskRingView.swift; sourceTree = "<group>"; };
 		803C24AB453B82AEAE0D8127 /* ScanCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanCategory.swift; sourceTree = "<group>"; };
 		831085989A1B279E4F518F34 /* MacSweeperApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacSweeperApp.swift; sourceTree = "<group>"; };
+		88941B95C83E63C7DEDDD0E1 /* NavigationChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationChrome.swift; sourceTree = "<group>"; };
 		A42846CF146659AB5D63326C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		A88BF90177A8C59D9B06421D /* ScanEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanEngine.swift; sourceTree = "<group>"; };
 		AC2CCB0413DD8BB7F38B70A5 /* RiskLevel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiskLevel.swift; sourceTree = "<group>"; };
@@ -127,6 +129,7 @@
 			isa = PBXGroup;
 			children = (
 				33874FBF0CFF80B019A86F6B /* MSTheme.swift */,
+				88941B95C83E63C7DEDDD0E1 /* NavigationChrome.swift */,
 			);
 			path = Theme;
 			sourceTree = "<group>";
@@ -246,6 +249,7 @@
 				9F780ED58C215B516D4B6CBB /* HomeView.swift in Sources */,
 				B9EDD1776C15B4DD8AB5BF4F /* MSTheme.swift in Sources */,
 				1611116B64EC3BC736FD7407 /* MacSweeperApp.swift in Sources */,
+				DC8DD40FBD8796026CBBB232 /* NavigationChrome.swift in Sources */,
 				B574918FB686004114B0FCA2 /* RiskBadge.swift in Sources */,
 				CB29CC1C764F0BE791A46E19 /* RiskLevel.swift in Sources */,
 				8FA57A142DAC66B8D3CA90B0 /* ScanCategory.swift in Sources */,

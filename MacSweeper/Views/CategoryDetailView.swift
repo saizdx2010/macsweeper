@@ -5,6 +5,7 @@ import AppKit
 
 struct CategoryDetailView: View {
     let result: ScanResult
+    @Binding var path: NavigationPath
 
     @State private var didCopyCommand = false
 
@@ -120,10 +121,11 @@ struct CategoryDetailView: View {
                 .padding(MSTheme.pagePadding)
             }
         }
-        .navigationTitle(result.category.label)
-        #if os(macOS)
-        .navigationSubtitle(ByteCountFormatter.string(fromByteCount: result.totalBytes, countStyle: .file))
-        #endif
+        .appDestinationChrome(
+            title: result.category.label,
+            subtitle: ByteCountFormatter.string(fromByteCount: result.totalBytes, countStyle: .file),
+            onBack: { AppNavigation.popLast($path) }
+        )
     }
 
     @ViewBuilder
@@ -181,7 +183,8 @@ struct CategoryDetailView: View {
                     )
                 ],
                 isSelected: true
-            )
+            ),
+            path: .constant(NavigationPath())
         )
     }
 }

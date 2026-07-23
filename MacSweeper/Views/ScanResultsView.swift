@@ -20,10 +20,11 @@ struct ScanResultsView: View {
                 footerBar
             }
         }
-        .navigationTitle(titleText)
-        #if os(macOS)
-        .navigationSubtitle(selectedSubtitle)
-        #endif
+        .appDestinationChrome(
+            title: titleText,
+            subtitle: selectedSubtitle,
+            onBack: { AppNavigation.popToRoot($path) }
+        )
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Rescan") {
