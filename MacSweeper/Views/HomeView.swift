@@ -48,8 +48,8 @@ struct HomeView: View {
                     }
                 }
         }
-        // Keep window toolbar available whenever we leave Home.
-        .toolbar(path.isEmpty ? .hidden : .visible, for: .windowToolbar)
+        // Keep traffic lights / window chrome visible on Home and pushed screens.
+        .toolbar(.visible, for: .windowToolbar)
     }
 
     private var homeRoot: some View {
