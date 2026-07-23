@@ -1,9 +1,9 @@
 import Foundation
 
-/// Records what was cleaned in the current session (and optionally on disk).
+/// Records what was cleaned in the current session (and optionally on disk / across launches).
 @MainActor
 final class AuditLogService: ObservableObject {
-    struct Entry: Identifiable, Equatable {
+    struct Entry: Identifiable, Equatable, Codable, Hashable {
         let id: UUID
         let timestamp: Date
         let categoryID: String
@@ -25,6 +25,11 @@ final class AuditLogService: ObservableObject {
     private let lastCleanDateKey = "lastClean.date"
     private let lastCleanBytesKey = "lastClean.freedBytes"
     private let lastCleanCountKey = "lastClean.itemCount"
+    private let historyKey = "audit.persistedEntries"
+    private let maxPersistedEntries = 200
+
+    /// When false, history stays session-only and is not written to disk/UserDefaults.
+    var keepHistoryEnabled: Bool = true
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -35,12 +40,13 @@ final class AuditLogService: ObservableObject {
                 itemCount: defaults.integer(forKey: lastCleanCountKey)
             )
         }
+        entries = Self.loadPersistedEntries(from: defaults)
     }
 
     func record(moved items: [CleanupService.MovedItem]) {
         let now = Date()
         for item in items {
-            entries.append(
+            entries.insert(
                 Entry(
                     id: UUID(),
                     timestamp: now,
@@ -48,9 +54,14 @@ final class AuditLogService: ObservableObject {
                     path: item.originalPath,
                     byteCount: item.byteCount,
                     destination: item.trashURL.path
-                )
+                ),
+                at: 0
             )
         }
+        if entries.count > maxPersistedEntries {
+            entries = Array(entries.prefix(maxPersistedEntries))
+        }
+        persistEntriesIfNeeded()
     }
 
     func finishClean(outcome: CleanupService.Outcome) {
@@ -84,7 +95,10 @@ final class AuditLogService: ObservableObject {
         defaults.set(summary.date, forKey: lastCleanDateKey)
         defaults.set(Int(summary.freedBytes), forKey: lastCleanBytesKey)
         defaults.set(summary.itemCount, forKey: lastCleanCountKey)
-        appendToDiskLog(items: items, summary: summary)
+
+        if keepHistoryEnabled {
+            appendToDiskLog(items: items, summary: summary)
+        }
     }
 
     func finishClean(moved items: [CleanupService.MovedItem]) {
@@ -101,9 +115,37 @@ final class AuditLogService: ObservableObject {
 
     func clearSession() {
         entries.removeAll()
+        defaults.removeObject(forKey: historyKey)
     }
 
-    // MARK: - Optional on-disk log
+    func applyKeepHistorySetting(_ enabled: Bool) {
+        keepHistoryEnabled = enabled
+        if enabled {
+            persistEntriesIfNeeded()
+        } else {
+            defaults.removeObject(forKey: historyKey)
+            if let url = logFileURL() {
+                try? fileManager.removeItem(at: url)
+            }
+        }
+    }
+
+    // MARK: - Persistence
+
+    private func persistEntriesIfNeeded() {
+        guard keepHistoryEnabled else { return }
+        guard let data = try? JSONEncoder().encode(entries) else { return }
+        defaults.set(data, forKey: historyKey)
+    }
+
+    private static func loadPersistedEntries(from defaults: UserDefaults) -> [Entry] {
+        guard let data = defaults.data(forKey: "audit.persistedEntries"),
+              let decoded = try? JSONDecoder().decode([Entry].self, from: data)
+        else {
+            return []
+        }
+        return decoded
+    }
 
     private func appendToDiskLog(items: [CleanupService.MovedItem], summary: SessionSummary) {
         guard let url = logFileURL() else { return }

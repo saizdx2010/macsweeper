@@ -31,11 +31,23 @@ final class ScanSession: ObservableObject {
     }
 
     var selectedBytes: Int64 {
-        results.filter(\.isSelected).reduce(0) { $0 + $1.totalBytes }
+        results.reduce(0) { $0 + $1.selectedBytes }
     }
 
     var selectedResults: [ScanResult] {
-        results.filter(\.isSelected)
+        results.compactMap { $0.selectingOnlyCheckedPaths() }
+    }
+
+    func index(forCategoryID id: String) -> Int? {
+        results.firstIndex { $0.category.id == id }
+    }
+
+    func binding(forCategoryID id: String) -> Binding<ScanResult>? {
+        guard let index = index(forCategoryID: id) else { return nil }
+        return Binding(
+            get: { self.results[index] },
+            set: { self.results[index] = $0 }
+        )
     }
 
     var coreIndices: [Int] {
@@ -46,7 +58,7 @@ final class ScanSession: ObservableObject {
         results.indices.filter { results[$0].category.isDevGroup }
     }
 
-    func start(includeDevMode: Bool) {
+    func start(includeDevMode: Bool, extraDevRoots: [String] = []) {
         cancel()
         results = []
         loadedRuleCount = 0
@@ -54,6 +66,7 @@ final class ScanSession: ObservableObject {
         statusMessage = "Preparing…"
         phase = .scanning
 
+        let roots = extraDevRoots
         scanTask = Task {
             do {
                 let categories = try await engine.loadCategories()
@@ -61,7 +74,10 @@ final class ScanSession: ObservableObject {
                 loadedRuleCount = active.count
                 statusMessage = "Scanning rules…"
 
-                for try await event in engine.scanStream(includeDevMode: includeDevMode) {
+                for try await event in engine.scanStream(
+                    includeDevMode: includeDevMode,
+                    extraDevRoots: roots
+                ) {
                     try Task.checkCancellation()
                     switch event {
                     case .started(let ruleCount):
@@ -99,8 +115,8 @@ final class ScanSession: ObservableObject {
         }
     }
 
-    func rescan(includeDevMode: Bool) {
-        start(includeDevMode: includeDevMode)
+    func rescan(includeDevMode: Bool, extraDevRoots: [String] = []) {
+        start(includeDevMode: includeDevMode, extraDevRoots: extraDevRoots)
     }
 
     private func insertSorted(_ result: ScanResult) {

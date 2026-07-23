@@ -77,6 +77,9 @@ actor CleanupService {
         "node_modules",
         ".venv",
         "venv",
+        "target",
+        ".gradle",
+        "Pods",
     ]
 
     init(fileManager: FileManager = .default) {
@@ -92,7 +95,7 @@ actor CleanupService {
         var emptiedBytes: Int64 = 0
         var emptiedCount = 0
 
-        let selected = results.filter { $0.isSelected && $0.category.risk != .manual }
+        let selected = results.compactMap { $0.selectingOnlyCheckedPaths() }
 
         for result in selected {
             try Task.checkCancellation()
@@ -108,7 +111,7 @@ actor CleanupService {
                 continue
             }
 
-            for scanned in result.paths {
+            for scanned in result.paths where scanned.isSelected {
                 try Task.checkCancellation()
 
                 let path = scanned.path

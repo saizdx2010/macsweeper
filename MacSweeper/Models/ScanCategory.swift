@@ -42,7 +42,8 @@ struct ScanCategory: Identifiable, Codable, Hashable {
         switch id {
         case "browser_chrome_cache", "browser_safari_cache", "browser_firefox_cache", "browser_edge_cache":
             return "globe"
-        case "user_app_caches", "font_caches", "quicklook_thumbnails", "itunes_podcast_cache", "core_simulator_caches":
+        case "user_app_caches", "font_caches", "quicklook_thumbnails", "itunes_podcast_cache", "core_simulator_caches",
+             "slack_cache", "zoom_cache", "discord_cache", "spotify_cache", "adobe_temp", "electron_app_caches":
             return "internaldrive"
         case "user_logs":
             return "doc.text"
@@ -52,10 +53,12 @@ struct ScanCategory: Identifiable, Codable, Hashable {
             return "arrow.down.circle"
         case "empty_trash":
             return "trash"
-        case "dev_node_modules":
+        case "dev_node_modules", "dev_npm_pnpm_yarn_caches":
             return "shippingbox"
-        case "dev_venvs":
+        case "dev_venvs", "dev_pip_cache":
             return "chevron.left.forwardslash.chevron.right"
+        case "dev_cargo_target", "dev_gradle", "dev_cocoapods":
+            return "hammer"
         case "homebrew_caches", "homebrew_cleanup":
             return "mug"
         case "docker_reclaim":

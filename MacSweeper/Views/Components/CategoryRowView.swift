@@ -48,7 +48,7 @@ struct CategoryRowView: View {
                 .frame(width: 18, height: 18)
         } else {
             Button {
-                result.isSelected.toggle()
+                result.setAllPathsSelected(!result.isSelected)
             } label: {
                 Image(systemName: result.isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.body)
@@ -66,6 +66,11 @@ struct CategoryRowView: View {
         if isManual, result.totalBytes == 0 {
             Text("Guide")
                 .foregroundStyle(.secondary)
+        } else if result.selectedBytes != result.totalBytes, result.selectedBytes > 0 {
+            Text(ByteCountFormatter.string(fromByteCount: result.selectedBytes, countStyle: .file))
+                .fontWeight(.semibold)
+                .monospacedDigit()
+                .foregroundStyle(.primary)
         } else {
             Text(ByteCountFormatter.string(fromByteCount: result.totalBytes, countStyle: .file))
                 .fontWeight(.semibold)

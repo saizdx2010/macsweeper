@@ -32,6 +32,7 @@ actor ScanEngine {
         .fileAllocatedSizeKey,
         .fileSizeKey,
         .linkCountKey,
+        .contentModificationDateKey,
     ]
 
     init(bundle: Bundle = .main, fileManager: FileManager = .default) {
@@ -51,11 +52,19 @@ actor ScanEngine {
 
     /// Streams category results as they are measured. Cancel the consuming task to stop.
     /// When `includeDevMode` is false, rules with `group == "dev"` are skipped.
-    nonisolated func scanStream(includeDevMode: Bool = false) -> AsyncThrowingStream<Progress, Error> {
+    /// `extraDevRoots` are absolute paths merged into `find_named_dirs` discovery roots.
+    nonisolated func scanStream(
+        includeDevMode: Bool = false,
+        extraDevRoots: [String] = []
+    ) -> AsyncThrowingStream<Progress, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    try await self.runScan(includeDevMode: includeDevMode, yieldingTo: continuation)
+                    try await self.runScan(
+                        includeDevMode: includeDevMode,
+                        extraDevRoots: extraDevRoots,
+                        yieldingTo: continuation
+                    )
                 } catch is CancellationError {
                     continuation.finish(throwing: CancellationError())
                 } catch {
@@ -69,9 +78,9 @@ actor ScanEngine {
     }
 
     /// Convenience: collect all results (still cancelable via Task).
-    func scan(includeDevMode: Bool = false) async throws -> [ScanResult] {
+    func scan(includeDevMode: Bool = false, extraDevRoots: [String] = []) async throws -> [ScanResult] {
         var results: [ScanResult] = []
-        for try await event in scanStream(includeDevMode: includeDevMode) {
+        for try await event in scanStream(includeDevMode: includeDevMode, extraDevRoots: extraDevRoots) {
             if case .category(let result) = event {
                 results.append(result)
             }
@@ -83,6 +92,7 @@ actor ScanEngine {
 
     private func runScan(
         includeDevMode: Bool,
+        extraDevRoots: [String],
         yieldingTo continuation: AsyncThrowingStream<Progress, Error>.Continuation
     ) async throws {
         let allCategories = try loadCategories()
@@ -97,7 +107,7 @@ actor ScanEngine {
         for (index, category) in categories.enumerated() {
             try Task.checkCancellation()
 
-            let result = try measureCategory(category)
+            let result = try measureCategory(category, extraDevRoots: extraDevRoots)
             if let result {
                 foundCount += 1
                 continuation.yield(.category(result))
@@ -109,13 +119,16 @@ actor ScanEngine {
         continuation.finish()
     }
 
-    private func measureCategory(_ category: ScanCategory) throws -> ScanResult? {
+    private func measureCategory(
+        _ category: ScanCategory,
+        extraDevRoots: [String]
+    ) throws -> ScanResult? {
         if category.action == .emptyTrash {
             return try measureEmptyTrash(category)
         }
 
         if category.scan == .findNamedDirs {
-            return try measureFindNamedDirs(category)
+            return try measureFindNamedDirs(category, extraDevRoots: extraDevRoots)
         }
 
         if category.scan == .listChildren {
@@ -128,6 +141,27 @@ actor ScanEngine {
         }
 
         return try measureFixedPaths(category)
+    }
+
+    private func makeScannedPath(
+        path: String,
+        byteCount: Int64,
+        isSelected: Bool,
+        modificationDate: Date? = nil
+    ) -> ScannedPath {
+        let date = modificationDate ?? contentModificationDate(at: path)
+        return ScannedPath(
+            path: path,
+            byteCount: byteCount,
+            isSelected: isSelected,
+            contentModificationDate: date
+        )
+    }
+
+    private func contentModificationDate(at path: String) -> Date? {
+        let url = URL(fileURLWithPath: path)
+        let values = try? url.resourceValues(forKeys: [.contentModificationDateKey])
+        return values?.contentModificationDate
     }
 
     private func measureFixedPaths(_ category: ScanCategory) throws -> ScanResult? {
@@ -158,7 +192,13 @@ actor ScanEngine {
             let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
             guard bytes > 0 else { continue }
 
-            scannedPaths.append(ScannedPath(path: expanded, byteCount: bytes))
+            scannedPaths.append(
+                makeScannedPath(
+                    path: expanded,
+                    byteCount: bytes,
+                    isSelected: category.risk.isSelectedByDefault
+                )
+            )
         }
 
         guard !scannedPaths.isEmpty else { return nil }
@@ -205,7 +245,9 @@ actor ScanEngine {
             let url = URL(fileURLWithPath: child.path, isDirectory: childIsDirectory.boolValue)
             let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
             guard bytes > 0 else { continue }
-            scannedPaths.append(ScannedPath(path: url.path, byteCount: bytes))
+            scannedPaths.append(
+                makeScannedPath(path: url.path, byteCount: bytes, isSelected: false)
+            )
         }
     }
 
@@ -233,7 +275,9 @@ actor ScanEngine {
             let url = URL(fileURLWithPath: expanded, isDirectory: isDirectory.boolValue)
             let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
             if bytes > 0 {
-                scannedPaths.append(ScannedPath(path: expanded, byteCount: bytes))
+                scannedPaths.append(
+                    makeScannedPath(path: expanded, byteCount: bytes, isSelected: false)
+                )
             }
         }
 
@@ -309,9 +353,17 @@ actor ScanEngine {
                     fileURLWithPath: itemURL.path,
                     isDirectory: itemIsDirectory.boolValue
                 )
+                let values = try? url.resourceValues(forKeys: [.contentModificationDateKey])
                 let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
                 guard bytes > 0 else { continue }
-                scannedPaths.append(ScannedPath(path: url.path, byteCount: bytes))
+                scannedPaths.append(
+                    makeScannedPath(
+                        path: url.path,
+                        byteCount: bytes,
+                        isSelected: isSelected,
+                        modificationDate: values?.contentModificationDate
+                    )
+                )
             }
         }
 
@@ -326,24 +378,36 @@ actor ScanEngine {
 
     // MARK: - Discovery
 
-    private func measureFindNamedDirs(_ category: ScanCategory) throws -> ScanResult? {
+    private func measureFindNamedDirs(
+        _ category: ScanCategory,
+        extraDevRoots: [String]
+    ) throws -> ScanResult? {
         let names = Set(category.findNames ?? [])
         guard !names.isEmpty else { return nil }
 
         let maxDepth = category.maxDepth ?? 6
         var foundURLs: [URL] = []
+        var seenRoots = Set<String>()
 
-        for pathString in category.paths {
+        var rootPaths: [String] = category.paths.map(expandHome)
+        for extra in extraDevRoots {
+            let standardized = (extra as NSString).standardizingPath
+            rootPaths.append(standardized)
+        }
+
+        for rootPath in rootPaths {
             try Task.checkCancellation()
-            let rootPath = expandHome(pathString)
+            let standardized = (rootPath as NSString).standardizingPath
+            guard seenRoots.insert(standardized).inserted else { continue }
+
             var isDirectory: ObjCBool = false
-            guard fileManager.fileExists(atPath: rootPath, isDirectory: &isDirectory),
+            guard fileManager.fileExists(atPath: standardized, isDirectory: &isDirectory),
                   isDirectory.boolValue
             else {
                 continue
             }
             try collectNamedDirectories(
-                root: URL(fileURLWithPath: rootPath, isDirectory: true),
+                root: URL(fileURLWithPath: standardized, isDirectory: true),
                 names: names,
                 maxDepth: maxDepth,
                 into: &foundURLs
@@ -354,12 +418,15 @@ actor ScanEngine {
 
         var scannedPaths: [ScannedPath] = []
         var seenHardLinks = Set<FileIdentity>()
+        let selected = category.risk.isSelectedByDefault
 
         for url in foundURLs {
             try Task.checkCancellation()
             let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
             guard bytes > 0 else { continue }
-            scannedPaths.append(ScannedPath(path: url.path, byteCount: bytes))
+            scannedPaths.append(
+                makeScannedPath(path: url.path, byteCount: bytes, isSelected: selected)
+            )
         }
 
         guard !scannedPaths.isEmpty else { return nil }

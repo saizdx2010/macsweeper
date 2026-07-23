@@ -4,6 +4,7 @@ import SwiftUI
 struct ScanningView: View {
     @ObservedObject var session: ScanSession
     let includeDevMode: Bool
+    var extraDevRoots: [String] = []
     @Binding var path: NavigationPath
 
     @State private var ringDrawn = false
@@ -86,7 +87,7 @@ struct ScanningView: View {
             }
             guard !didStart else { return }
             didStart = true
-            session.start(includeDevMode: includeDevMode)
+            session.start(includeDevMode: includeDevMode, extraDevRoots: extraDevRoots)
         }
         .onChange(of: session.phase) { _, newPhase in
             guard newPhase == .finished else { return }

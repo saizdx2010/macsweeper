@@ -288,6 +288,8 @@ In-app copy: *"We need this to empty Trash. Files never leave your Mac."*
 | **2** | Move selected items to Trash; confirm flow; undo hint + session audit log | +1 week |
 | **3** | Polish: cancelable scan, better size accuracy, optional FDA empty-Trash | +1 week |
 | **4** | Dev mode (`node_modules`, Docker, Homebrew) — opt-in section | +2 weeks |
+| **5** | Selection & trust polish: per-item checkboxes, Downloads filters, history, Settings | Done |
+| **6** | Broader reclaim rules + custom Dev scan folders (still Trash-safe / Manual for brew·Docker) | Done |
 
 **Phase 4 decisions:**
 
@@ -296,8 +298,23 @@ In-app copy: *"We need this to empty Trash. Files never leave your Mac."*
 - `node_modules` / virtualenvs: Risky, Trash, unchecked.
 - Homebrew caches: Moderate, Trash.
 - Docker reclaim and Homebrew deep cleanup: Manual rows with copyable commands — no shell-out.
-- No full-home walk, user-picked folders, or sudo/system paths.
-| **Later** | ncdu-style disk treemap (optional, not on the critical path) | TBD |
+- No full-home walk or sudo/system paths (custom Dev folders added in Phase 6).
+
+**Phase 5 decisions:**
+
+- Detail supports per-item selection for list/discovery categories (Downloads, Mail, `node_modules`, etc.).
+- Downloads/Mail Detail: age filters (>30 / >90 days) and size filters (>100 MB / >1 GB) plus Select/Deselect visible.
+- Cleanup history is viewable in-app; optional persistence across launches (Settings).
+- Settings gear: Dev mode default, custom Dev folders, history toggle, tip-jar placeholder.
+
+**Phase 6 decisions:**
+
+- Extra Safe caches: Slack, Zoom, Discord, Spotify, Adobe temp, common Electron apps.
+- Extra Dev rules: Cargo `target`, Gradle caches, CocoaPods, npm/pnpm/yarn caches, pip cache.
+- Custom Dev folders via Settings (bookmark once; must stay under home).
+- Docker / deep brew remain Manual guides only.
+
+**Later:** ncdu-style disk treemap (optional, not on the critical path).
 
 ### Phase 1 non-goals
 

@@ -65,7 +65,7 @@ struct CategoryCardRow: View {
                 .frame(width: 22, height: 22)
         } else {
             Button {
-                result.isSelected.toggle()
+                result.setAllPathsSelected(!result.isSelected)
             } label: {
                 Image(systemName: result.isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
@@ -82,6 +82,16 @@ struct CategoryCardRow: View {
             Text("Guide")
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
+        } else if result.selectedBytes != result.totalBytes, result.selectedBytes > 0 {
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(ByteCountFormatter.string(fromByteCount: result.selectedBytes, countStyle: .file))
+                    .font(.body.weight(.semibold))
+                    .monospacedDigit()
+                Text("of \(ByteCountFormatter.string(fromByteCount: result.totalBytes, countStyle: .file))")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .monospacedDigit()
+            }
         } else {
             Text(ByteCountFormatter.string(fromByteCount: result.totalBytes, countStyle: .file))
                 .font(.body.weight(.semibold))
@@ -116,7 +126,7 @@ struct CategorySummaryCard: View {
 
                 Spacer(minLength: 8)
 
-                Text(ByteCountFormatter.string(fromByteCount: result.totalBytes, countStyle: .file))
+                Text(ByteCountFormatter.string(fromByteCount: result.selectedBytes > 0 ? result.selectedBytes : result.totalBytes, countStyle: .file))
                     .font(.body.weight(.semibold))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)

@@ -43,15 +43,91 @@
     "description": "Temporary files; Edge rebuilds these automatically."
   },
   {
+    "id": "slack_cache",
+    "label": "Slack cache",
+    "paths": [
+      "~/Library/Caches/com.tinyspeck.slackmacgap",
+      "~/Library/Application Support/Slack/Cache",
+      "~/Library/Application Support/Slack/Code Cache",
+      "~/Library/Application Support/Slack/GPUCache"
+    ],
+    "risk": "safe",
+    "description": "Slack temporary files and Electron caches. Rebuilds as you use Slack."
+  },
+  {
+    "id": "zoom_cache",
+    "label": "Zoom cache",
+    "paths": [
+      "~/Library/Caches/us.zoom.xos",
+      "~/Library/Application Support/zoom.us/Cache",
+      "~/Library/Logs/zoom.us"
+    ],
+    "risk": "safe",
+    "description": "Zoom caches and logs. Regenerated the next time you join a meeting."
+  },
+  {
+    "id": "discord_cache",
+    "label": "Discord cache",
+    "paths": [
+      "~/Library/Caches/com.hnc.Discord",
+      "~/Library/Application Support/discord/Cache",
+      "~/Library/Application Support/discord/Code Cache",
+      "~/Library/Application Support/discord/GPUCache"
+    ],
+    "risk": "safe",
+    "description": "Discord temporary files. Rebuilds automatically."
+  },
+  {
+    "id": "spotify_cache",
+    "label": "Spotify cache",
+    "paths": [
+      "~/Library/Caches/com.spotify.client",
+      "~/Library/Application Support/Spotify/PersistentCache",
+      "~/Library/Application Support/Spotify/Storage"
+    ],
+    "risk": "safe",
+    "description": "Spotify media and app caches. Tracks re-download when you play them again."
+  },
+  {
+    "id": "adobe_temp",
+    "label": "Adobe temp / caches",
+    "paths": [
+      "~/Library/Caches/Adobe",
+      "~/Library/Caches/com.adobe.Acrobat.Pro",
+      "~/Library/Application Support/Adobe/Common/Media Cache Files",
+      "~/Library/Application Support/Adobe/Common/Media Cache"
+    ],
+    "risk": "safe",
+    "description": "Adobe regenerable caches and media cache files. Safe to remove; apps rebuild as needed."
+  },
+  {
+    "id": "electron_app_caches",
+    "label": "Electron app caches",
+    "paths": [
+      "~/Library/Caches/com.microsoft.VSCode",
+      "~/Library/Caches/com.microsoft.VSCode.ShipIt",
+      "~/Library/Caches/com.figma.Desktop",
+      "~/Library/Caches/com.notion.id",
+      "~/Library/Caches/company.thebrowser.Browser",
+      "~/Library/Application Support/Code/Cache",
+      "~/Library/Application Support/Code/CachedData",
+      "~/Library/Application Support/Code/Code Cache",
+      "~/Library/Application Support/Code/GPUCache",
+      "~/Library/Application Support/Figma/Cache",
+      "~/Library/Application Support/Figma/Code Cache",
+      "~/Library/Application Support/Notion/Cache",
+      "~/Library/Application Support/Notion/Code Cache"
+    ],
+    "risk": "safe",
+    "description": "Common Electron app caches (VS Code, Figma, Notion, Arc). Rebuild on next launch."
+  },
+  {
     "id": "user_app_caches",
     "label": "App caches",
     "paths": [
       "~/Library/Caches/com.apple.Music",
       "~/Library/Caches/com.apple.TV",
       "~/Library/Caches/com.apple.iTunes",
-      "~/Library/Caches/com.spotify.client",
-      "~/Library/Caches/com.hnc.Discord",
-      "~/Library/Caches/com.tinyspeck.slackmacgap",
       "~/Library/Caches/com.apple.dt.Xcode",
       "~/Library/Caches/org.videolan.vlc",
       "~/Library/Caches/com.apple.Safari.SafeBrowsing",
@@ -113,7 +189,7 @@
     "paths": ["~/Downloads"],
     "risk": "moderate",
     "scan": "list_children",
-    "description": "Everything currently in Downloads. Review carefully — may include keepers."
+    "description": "Everything currently in Downloads. Review carefully — may include keepers. Use age/size filters in Detail."
   },
   {
     "id": "quicklook_thumbnails",
@@ -169,7 +245,7 @@
     "scan": "find_named_dirs",
     "find_names": ["node_modules"],
     "max_depth": 6,
-    "description": "npm/yarn/pnpm dependency folders under common project roots. Safe to remove; reinstall with your package manager. Review paths before cleaning."
+    "description": "npm/yarn/pnpm dependency folders under project roots. Safe to remove; reinstall with your package manager. Review paths before cleaning."
   },
   {
     "id": "dev_venvs",
@@ -187,7 +263,68 @@
     "scan": "find_named_dirs",
     "find_names": [".venv", "venv"],
     "max_depth": 6,
-    "description": "Python virtual environments under common project roots. Recreate with python -m venv or your project tool."
+    "description": "Python virtual environments under project roots. Recreate with python -m venv or your project tool."
+  },
+  {
+    "id": "dev_cargo_target",
+    "label": "Cargo target",
+    "paths": [
+      "~/Developer",
+      "~/Projects",
+      "~/src",
+      "~/code",
+      "~/Documents/GitHub",
+      "~/Desktop"
+    ],
+    "risk": "risky",
+    "group": "dev",
+    "scan": "find_named_dirs",
+    "find_names": ["target"],
+    "max_depth": 6,
+    "description": "Rust build output folders named target. Rebuild with cargo build. Review carefully — some non-Rust projects use a target folder."
+  },
+  {
+    "id": "dev_gradle",
+    "label": "Gradle caches",
+    "paths": [
+      "~/.gradle/caches"
+    ],
+    "risk": "moderate",
+    "group": "dev",
+    "description": "Gradle dependency caches. Next build re-downloads what’s needed."
+  },
+  {
+    "id": "dev_cocoapods",
+    "label": "CocoaPods cache",
+    "paths": ["~/Library/Caches/CocoaPods"],
+    "risk": "moderate",
+    "group": "dev",
+    "description": "Downloaded pod specs and archives. pod install re-fetches as needed."
+  },
+  {
+    "id": "dev_npm_pnpm_yarn_caches",
+    "label": "npm / pnpm / yarn caches",
+    "paths": [
+      "~/.npm/_cacache",
+      "~/Library/Caches/pnpm",
+      "~/.pnpm-store",
+      "~/Library/Caches/Yarn",
+      "~/.yarn/berry/cache"
+    ],
+    "risk": "moderate",
+    "group": "dev",
+    "description": "Package manager global caches. Next install re-downloads packages."
+  },
+  {
+    "id": "dev_pip_cache",
+    "label": "pip cache",
+    "paths": [
+      "~/Library/Caches/pip",
+      "~/.cache/pip"
+    ],
+    "risk": "moderate",
+    "group": "dev",
+    "description": "Python pip download cache. Rebuilt on the next pip install."
   },
   {
     "id": "homebrew_caches",

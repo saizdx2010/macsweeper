@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject private var auditLog: AuditLogService
+    @EnvironmentObject private var settings: AppSettings
 
     @AppStorage("includeDevMode") private var includeDevMode = false
     @StateObject private var scanSession = ScanSession()
@@ -33,6 +34,7 @@ struct HomeView: View {
                         ScanningView(
                             session: scanSession,
                             includeDevMode: includeDevMode,
+                            extraDevRoots: settings.customDevScanRoots,
                             path: $path
                         )
                     case .results:
@@ -41,15 +43,33 @@ struct HomeView: View {
                             includeDevMode: includeDevMode,
                             path: $path
                         )
-                    case .detail(let result):
-                        CategoryDetailView(result: result, path: $path)
+                    case .detail(let categoryID):
+                        if let binding = scanSession.binding(forCategoryID: categoryID) {
+                            CategoryDetailView(result: binding, path: $path)
+                        } else {
+                            ContentUnavailableView(
+                                "Category unavailable",
+                                systemImage: "questionmark.folder",
+                                description: Text("Rescan to refresh results.")
+                            )
+                            .appDestinationChrome(
+                                title: "Detail",
+                                onBack: { AppNavigation.popLast($path) }
+                            )
+                        }
                     case .clean(let results):
                         CleanFlowView(results: results, navigationPath: $path)
+                    case .settings:
+                        SettingsView(path: $path)
+                    case .history:
+                        CleanupHistoryView(path: $path)
                     }
                 }
         }
-        // Keep traffic lights / window chrome visible on Home and pushed screens.
         .toolbar(.visible, for: .windowToolbar)
+        .onAppear {
+            auditLog.applyKeepHistorySetting(settings.keepCleanupHistory)
+        }
     }
 
     private var homeRoot: some View {
@@ -57,6 +77,20 @@ struct HomeView: View {
             StageBackground()
 
             VStack(spacing: 0) {
+                HStack {
+                    Spacer()
+                    Button {
+                        path.append(AppRoute.settings)
+                    } label: {
+                        Image(systemName: "gearshape")
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Settings")
+                    .accessibilityLabel("Settings")
+                }
+
                 Text("MacSweeper")
                     .font(MSTheme.wordmarkFont)
                     .foregroundStyle(.primary)
@@ -223,7 +257,7 @@ struct HomeView: View {
             CoverageColumn(
                 id: "safe",
                 title: "Safe",
-                blurb: "Regenerable caches, logs, Quick Look"
+                blurb: "Caches, logs, Slack, Zoom, Discord"
             ),
             CoverageColumn(
                 id: "review",
@@ -275,9 +309,20 @@ struct HomeView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(lastCleanLabel)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 16) {
+                Text(lastCleanLabel)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                if auditLog.lastClean != nil || !auditLog.entries.isEmpty {
+                    Button("History") {
+                        path.append(AppRoute.history)
+                    }
+                    .buttonStyle(.plain)
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(MSTheme.accent)
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.bottom, 4)
@@ -293,10 +338,14 @@ struct HomeView: View {
     }
 
     private var devModeCaption: String {
+        let customCount = settings.customDevRoots.count
         if includeDevMode {
-            return "Also scans project folders for node_modules and virtualenvs."
+            if customCount > 0 {
+                return "Also scans project folders plus \(customCount) custom Dev root\(customCount == 1 ? "" : "s")."
+            }
+            return "Also scans project folders for node_modules, virtualenvs, and build caches."
         }
-        return "Scans project folders for node_modules and virtualenvs."
+        return "Scans project folders for node_modules, virtualenvs, and build caches."
     }
 
     private var lastCleanLabel: String {
@@ -330,11 +379,14 @@ private struct CoverageColumn: Identifiable {
 enum AppRoute: Hashable {
     case scanning
     case results
-    case detail(ScanResult)
+    case detail(categoryID: String)
     case clean([ScanResult])
+    case settings
+    case history
 }
 
 #Preview {
     HomeView()
         .environmentObject(AuditLogService())
+        .environmentObject(AppSettings())
 }

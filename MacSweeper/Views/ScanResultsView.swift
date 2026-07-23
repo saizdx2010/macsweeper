@@ -126,7 +126,7 @@ struct ScanResultsView: View {
                     showsSelection: true,
                     showsChevron: true,
                     onDetails: {
-                        path.append(AppRoute.detail(session.results[index]))
+                        path.append(AppRoute.detail(categoryID: session.results[index].category.id))
                     }
                 )
                 .opacity(cardsVisible ? 1 : 0)
