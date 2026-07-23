@@ -17,34 +17,43 @@ struct CategoryCardRow: View {
                     selectionControl
                 }
 
-                iconTile
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(result.category.label)
-                        .font(.body.weight(.medium))
-                        .lineLimit(1)
-                    RiskBadge(risk: result.category.risk)
-                }
-
-                Spacer(minLength: 8)
-
-                sizeLabel
-
-                if showsChevron {
-                    Button {
-                        onDetails?()
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
-                            .frame(width: 20, height: 28)
+                if let onDetails {
+                    Button(action: onDetails) {
+                        detailsContent
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.msActionable)
                     .accessibilityLabel("Details")
+                } else {
+                    detailsContent
                 }
             }
         }
         .opacity(isRisky ? 0.75 : 1)
+    }
+
+    private var detailsContent: some View {
+        HStack(spacing: 12) {
+            iconTile
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(result.category.label)
+                    .font(.body.weight(.medium))
+                    .lineLimit(1)
+                RiskBadge(risk: result.category.risk)
+            }
+
+            Spacer(minLength: 8)
+
+            sizeLabel
+
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .frame(width: 20, height: 28)
+            }
+        }
+        .contentShape(Rectangle())
     }
 
     private var iconTile: some View {
@@ -71,7 +80,7 @@ struct CategoryCardRow: View {
                     .font(.title3)
                     .foregroundStyle(result.isSelected ? MSTheme.accent : Color.secondary.opacity(0.55))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.msActionable)
             .accessibilityLabel(result.isSelected ? "Selected" : "Not selected")
         }
     }

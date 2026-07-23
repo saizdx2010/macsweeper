@@ -92,7 +92,7 @@ struct HomeView: View {
                             .font(.title3)
                             .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.msActionable)
                     .help("Settings")
                     .accessibilityLabel("Settings")
                 }
@@ -220,7 +220,7 @@ struct HomeView: View {
                     Button("Full Disk Access needed → Open Settings") {
                         FullDiskAccessService.openSystemSettings()
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.msActionable)
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(MSTheme.accent)
                     .multilineTextAlignment(textAlignment)
@@ -329,7 +329,7 @@ struct HomeView: View {
                     Button("History") {
                         path.append(AppRoute.history)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.msActionable)
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(MSTheme.accent)
                 }

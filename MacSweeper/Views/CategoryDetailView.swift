@@ -138,28 +138,57 @@ struct CategoryDetailView: View {
 
     private var filtersCard: some View {
         MSCard {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 14) {
                 Text("FILTERS")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
 
-                Picker("Age", selection: $ageFilter) {
-                    ForEach(AgeFilter.allCases) { filter in
-                        Text(filter.label).tag(filter)
-                    }
-                }
-                .pickerStyle(.segmented)
+                filterChipRow(
+                    icon: "clock",
+                    title: "Age",
+                    selection: $ageFilter,
+                    options: AgeFilter.allCases
+                ) { $0.label }
 
-                Picker("Size", selection: $sizeFilter) {
-                    ForEach(SizeFilter.allCases) { filter in
-                        Text(filter.label).tag(filter)
-                    }
-                }
-                .pickerStyle(.segmented)
+                filterChipRow(
+                    icon: "externaldrive",
+                    title: "Size",
+                    selection: $sizeFilter,
+                    options: SizeFilter.allCases
+                ) { $0.label }
 
                 Text("Filters change what’s shown. Use Select visible to check matching items.")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary.opacity(0.85))
+            }
+        }
+    }
+
+    private func filterChipRow<T: Hashable & Identifiable>(
+        icon: String,
+        title: String,
+        selection: Binding<T>,
+        options: [T],
+        label: (T) -> String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(title, systemImage: icon)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+                .labelStyle(.titleAndIcon)
+                .symbolRenderingMode(.hierarchical)
+
+            HStack(spacing: 8) {
+                ForEach(options) { option in
+                    FilterChip(
+                        title: label(option),
+                        isSelected: selection.wrappedValue == option
+                    ) {
+                        withAnimation(.easeOut(duration: 0.15)) {
+                            selection.wrappedValue = option
+                        }
+                    }
+                }
             }
         }
     }
@@ -231,7 +260,7 @@ struct CategoryDetailView: View {
                         .font(.title3)
                         .foregroundStyle(item.isSelected ? MSTheme.accent : Color.secondary.opacity(0.55))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.msActionable)
                 .accessibilityLabel(item.isSelected ? "Selected" : "Not selected")
             }
 
@@ -299,6 +328,64 @@ struct CategoryDetailView: View {
 }
 
 // MARK: - Filters
+
+private struct FilterChip: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.callout.weight(isSelected ? .semibold : .medium))
+                .foregroundStyle(isSelected ? MSTheme.accent : .secondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(chipBackground, in: Capsule(style: .continuous))
+                .overlay(
+                    Capsule(style: .continuous)
+                        .strokeBorder(chipStroke, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+        .scaleEffect(isHovered && !isSelected ? 1.02 : 1)
+        .onHover { hovering in
+            guard isHovered != hovering else { return }
+            isHovered = hovering
+            #if os(macOS)
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+            #endif
+        }
+        .onDisappear {
+            #if os(macOS)
+            if isHovered { NSCursor.pop() }
+            #endif
+        }
+        .animation(.easeOut(duration: 0.12), value: isHovered)
+        .animation(.easeOut(duration: 0.15), value: isSelected)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var chipBackground: Color {
+        if isSelected {
+            return MSTheme.accent.opacity(0.16)
+        }
+        return Color.primary.opacity(isHovered ? 0.10 : 0.06)
+    }
+
+    private var chipStroke: Color {
+        if isSelected {
+            return MSTheme.accent.opacity(0.35)
+        }
+        return Color.primary.opacity(isHovered ? 0.12 : 0.06)
+    }
+}
 
 private enum AgeFilter: String, CaseIterable, Identifiable {
     case any

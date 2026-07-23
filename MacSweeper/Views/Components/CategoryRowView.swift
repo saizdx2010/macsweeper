@@ -54,7 +54,7 @@ struct CategoryRowView: View {
                     .font(.body)
                     .foregroundStyle(result.isSelected ? Color.accentColor : Color.secondary)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.msActionable)
             .frame(width: 18, height: 18)
             .accessibilityLabel(result.isSelected ? "Selected" : "Not selected")
             .accessibilityAddTraits(.isButton)

@@ -86,7 +86,7 @@ struct SettingsView: View {
                                     .font(.body.weight(.medium))
                                     .foregroundStyle(MSTheme.accent)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.msActionable)
                         }
                     }
                 }
