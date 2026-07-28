@@ -1,6 +1,13 @@
 import AppKit
 import Foundation
 
+/// Tappable path segment for the disk browser header.
+struct BrowseBreadcrumb: Identifiable, Hashable, Sendable {
+    var id: String { path }
+    let title: String
+    let path: String
+}
+
 /// One child entry in the ncdu-style disk browser.
 struct DiskBrowseEntry: Identifiable, Hashable, Sendable {
     var id: String { path }
@@ -61,6 +68,25 @@ final class DiskBrowseService: ObservableObject {
 
     var totalKnownBytes: Int64 {
         entries.compactMap(\.byteCount).reduce(0, +)
+    }
+
+    /// Breadcrumb segments from home (`~`) to `currentPath`.
+    var breadcrumbs: [BrowseBreadcrumb] {
+        let home = URL(fileURLWithPath: homeDirectory).resolvingSymlinksInPath().path
+        let current = URL(fileURLWithPath: currentPath).resolvingSymlinksInPath().path
+        var crumbs: [BrowseBreadcrumb] = [
+            BrowseBreadcrumb(title: "~", path: homeDirectory)
+        ]
+        guard current != home, current.hasPrefix(home + "/") else {
+            return crumbs
+        }
+        let relative = String(current.dropFirst(home.count + 1))
+        var built = homeDirectory
+        for component in relative.split(separator: "/") where !component.isEmpty {
+            built = (built as NSString).appendingPathComponent(String(component))
+            crumbs.append(BrowseBreadcrumb(title: String(component), path: built))
+        }
+        return crumbs
     }
 
     func loadDirectory(_ path: String) {

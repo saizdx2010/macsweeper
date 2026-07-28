@@ -42,7 +42,9 @@ Full Disk Access is requested only when needed (e.g. Empty Trash), with a clear 
 
 Phases **1–9** shipped: scan → preview → Trash-safe clean, Dev mode, selection/history/Settings, broad reclaim rules, **Browse disk**, notarized release scripts, and safety unit tests.
 
-Phases **10–11** planned: orphaned-app leftovers, then APFS sizing + large-list Detail UX. Details in [PRODUCT.md](PRODUCT.md).
+**UX polish** (post Phase 9): Reveal in Finder, bulk Safe selection, Detail search/show-more, Clean progress, Browse breadcrumbs/keys, history labels, shortcuts/a11y.
+
+Phase **10** planned (orphaned-app leftovers). Phase **11** partially shipped (Detail large-list UX); APFS sizing remains. Details in [PRODUCT.md](PRODUCT.md).
 
 ## Requirements
 

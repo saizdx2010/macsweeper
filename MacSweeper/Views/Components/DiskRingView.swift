@@ -31,6 +31,9 @@ struct DiskRingView<Content: View>: View {
         }
         .frame(width: size, height: size)
         .padding(lineWidth / 2)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Disk usage")
+        .accessibilityValue("\(Int((clampedFraction * 100).rounded())) percent used")
     }
 }
 

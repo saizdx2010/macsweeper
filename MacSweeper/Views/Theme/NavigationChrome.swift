@@ -40,6 +40,8 @@ struct AppDestinationChrome: ViewModifier {
                             }
                         }
                         .help("Back")
+                        .keyboardShortcut(.cancelAction)
+                        .accessibilityLabel("Back")
                     }
                 }
             }

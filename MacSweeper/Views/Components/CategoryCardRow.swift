@@ -22,7 +22,7 @@ struct CategoryCardRow: View {
                         detailsContent
                     }
                     .buttonStyle(.msActionable)
-                    .accessibilityLabel("Details")
+                    .accessibilityLabel("Details for \(result.category.label)")
                 } else {
                     detailsContent
                 }
@@ -72,6 +72,7 @@ struct CategoryCardRow: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
                 .frame(width: 22, height: 22)
+                .accessibilityLabel("Guide only, no selection")
         } else {
             Button {
                 result.setAllPathsSelected(!result.isSelected)
@@ -81,7 +82,7 @@ struct CategoryCardRow: View {
                     .foregroundStyle(result.isSelected ? MSTheme.accent : Color.secondary.opacity(0.55))
             }
             .buttonStyle(.msActionable)
-            .accessibilityLabel(result.isSelected ? "Selected" : "Not selected")
+            .accessibilityLabel(result.isSelected ? "Selected \(result.category.label)" : "Not selected \(result.category.label)")
         }
     }
 

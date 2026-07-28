@@ -294,7 +294,7 @@ In-app copy: *"We need this to empty Trash. Files never leave your Mac."*
 | **8** | Ship & sustain: notarized `.app`, safety tests (free forever) | Done |
 | **9** | Broader regenerable cache / Manual rules (Brave, JetBrains, messaging, Playwright, etc.) | Done |
 | **10** | Orphaned-app leftovers (prefs / Application Support for uninstalled apps) | Planned |
-| **11** | APFS-aware sizing + large-list Detail UX (virtualized / show-more / search) | Planned |
+| **11** | APFS-aware sizing + large-list Detail UX (virtualized / show-more / search) | Partial — Detail search / show-more / filters shipped; APFS sizing remains |
 
 ### High-ROI priorities (post Phase 4)
 
@@ -314,7 +314,7 @@ Chosen first track: **broader cache rules** (cheap JSON wins, same Safe/Moderate
 |-------|--------|-------|
 | **9** | Grow `cleanup-rules.json` toward mac-cleanup-go coverage | Brave/Opera, JetBrains, Telegram/WhatsApp/Teams, Steam, watchOS/tvOS DeviceSupport, Playwright/Cypress/Puppeteer, Go/Maven/Bun/Carthage/Bundler caches; Manual `xcrun simctl delete unavailable`. Still Trash-first; no shell-out. |
 | **10** | Orphaned-app leftover sweeping (Mole-inspired) | Prefs / Application Support / caches for apps no longer in `/Applications` or `~/Applications`. Risk **Moderate/Risky**, unchecked. Keep hard exclusions (Documents, profiles, keychains). Never default-on Safe. |
-| **11** | APFS-aware sizing + large-list Detail UX | Clone/sparse accounting so sizes match Finder more closely; Detail beyond the 200-path cap (virtualized list, show more, search/filter). |
+| **11** | APFS-aware sizing + large-list Detail UX | **Large-list Detail UX shipped** (search, show more, broader age/size filters, Reveal in Finder) along with Results/Browse/Clean polish. **APFS clone/sparse sizing still planned** so totals match Finder more closely. |
 
 **Secondary (after 9–11, packaging polish):** cleanup report export (CSV/Markdown), opt-in reclaim reminders (not menu-bar monitoring), Sparkle self-update for the notarized `.app`, accessibility/localization, CI notarization.
 

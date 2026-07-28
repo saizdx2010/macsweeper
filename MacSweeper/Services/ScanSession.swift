@@ -58,6 +58,24 @@ final class ScanSession: ObservableObject {
         results.indices.filter { results[$0].category.isDevGroup }
     }
 
+    func selectWhere(risk: RiskLevel) {
+        for index in results.indices where results[index].category.risk == risk {
+            results[index].setAllPathsSelected(true)
+        }
+    }
+
+    func deselectWhere(risk: RiskLevel) {
+        for index in results.indices where results[index].category.risk == risk {
+            results[index].setAllPathsSelected(false)
+        }
+    }
+
+    func deselectAll() {
+        for index in results.indices {
+            results[index].setAllPathsSelected(false)
+        }
+    }
+
     func start(includeDevMode: Bool, extraDevRoots: [String] = []) {
         cancel()
         results = []

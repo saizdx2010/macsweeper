@@ -5,10 +5,18 @@ struct ScanResultsView: View {
     let includeDevMode: Bool
     @Binding var path: NavigationPath
 
+    @AppStorage("includeDevMode") private var includeDevModeStorage = false
+    @AppStorage("didSeeResultsTip") private var didSeeResultsTip = false
     @State private var cardsVisible = false
 
     private var selectedBytes: Int64 { session.selectedBytes }
     private var totalBytes: Int64 { session.totalBytes }
+    private var isDevModeEnabled: Bool { includeDevMode || includeDevModeStorage }
+
+    private var cleanButtonTitle: String {
+        let size = ByteCountFormatter.string(fromByteCount: selectedBytes, countStyle: .file)
+        return "Clean \(size)"
+    }
 
     var body: some View {
         ZStack {
@@ -17,12 +25,16 @@ struct ScanResultsView: View {
             VStack(spacing: 0) {
                 content
 
-                footerBar
+                if hasListContent {
+                    footerBar
+                }
             }
         }
         .appDestinationChrome(
-            title: titleText,
-            subtitle: selectedSubtitle,
+            title: "Results",
+            subtitle: hasListContent
+                ? "Selected \(ByteCountFormatter.string(fromByteCount: selectedBytes, countStyle: .file))"
+                : nil,
             onBack: { AppNavigation.popToRoot($path) }
         )
         .toolbar {
@@ -31,6 +43,23 @@ struct ScanResultsView: View {
                     path = NavigationPath()
                     path.append(AppRoute.scanning)
                 }
+                .keyboardShortcut("r", modifiers: .command)
+            }
+            if hasListContent {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu("Selection") {
+                        Button("Select Safe") {
+                            session.selectWhere(risk: .safe)
+                        }
+                        Button("Deselect Risky") {
+                            session.deselectWhere(risk: .risky)
+                        }
+                        Divider()
+                        Button("Deselect All") {
+                            session.deselectAll()
+                        }
+                    }
+                }
             }
         }
         .onAppear {
@@ -38,6 +67,10 @@ struct ScanResultsView: View {
                 cardsVisible = true
             }
         }
+    }
+
+    private var hasListContent: Bool {
+        !session.results.isEmpty
     }
 
     @ViewBuilder
@@ -50,24 +83,26 @@ struct ScanResultsView: View {
                 description: Text(message)
             )
         case .cancelled where session.results.isEmpty:
-            ContentUnavailableView(
-                "Scan cancelled",
+            emptyState(
+                title: "Scan cancelled",
                 systemImage: "stop.circle",
-                description: Text("No categories finished before cancel.")
+                description: "No categories finished before cancel."
             )
         case _ where session.results.isEmpty:
-            ContentUnavailableView(
-                "No reclaimable space found",
+            emptyState(
+                title: "No reclaimable space found",
                 systemImage: "tray",
-                description: Text(
-                    "Checked \(session.loadedRuleCount) rules under your home folder. Nothing matched with measurable size."
-                )
+                description: "Checked \(session.loadedRuleCount) rules under your home folder. Nothing matched with measurable size."
             )
         default:
             ScrollView {
                 VStack(alignment: .leading, spacing: MSTheme.sectionSpacing) {
                     headerBand
                         .opacity(cardsVisible ? 1 : 0)
+
+                    if !didSeeResultsTip {
+                        tipBanner
+                    }
 
                     if !session.coreIndices.isEmpty {
                         section(title: "Reclaimable", indices: session.coreIndices)
@@ -82,6 +117,62 @@ struct ScanResultsView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .padding(MSTheme.pagePadding)
+            }
+        }
+    }
+
+    private func emptyState(title: String, systemImage: String, description: String) -> some View {
+        VStack(spacing: 20) {
+            ContentUnavailableView(
+                title,
+                systemImage: systemImage,
+                description: Text(description)
+            )
+
+            VStack(spacing: 12) {
+                SecondaryCTAButton(title: "Browse disk", expands: false) {
+                    path.append(AppRoute.browse(rootPath: nil))
+                }
+
+                if !isDevModeEnabled {
+                    SecondaryCTAButton(title: "Include Dev mode", expands: false) {
+                        includeDevModeStorage = true
+                        path = NavigationPath()
+                        path.append(AppRoute.scanning)
+                    }
+                }
+
+                PrimaryCTAButton(title: "Rescan", expands: false) {
+                    path = NavigationPath()
+                    path.append(AppRoute.scanning)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(MSTheme.pagePadding)
+    }
+
+    private var tipBanner: some View {
+        MSCard {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "lightbulb")
+                    .foregroundStyle(MSTheme.accent)
+                    .accessibilityHidden(true)
+
+                Text("Safe items are checked; expand a row to review paths.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button {
+                    didSeeResultsTip = true
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.msActionable)
+                .accessibilityLabel("Dismiss tip")
             }
         }
     }
@@ -142,38 +233,21 @@ struct ScanResultsView: View {
     private var footerBar: some View {
         VStack(spacing: 0) {
             Divider().opacity(0.5)
-            HStack(spacing: 16) {
-                Text("Selected \(ByteCountFormatter.string(fromByteCount: selectedBytes, countStyle: .file))")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                    .animation(.snappy(duration: 0.2), value: selectedBytes)
-
+            HStack {
                 Spacer(minLength: 8)
 
                 PrimaryCTANavigationLink(
-                    title: "Clean Now",
+                    title: cleanButtonTitle,
                     value: AppRoute.clean(session.selectedResults),
                     isEnabled: !session.selectedResults.isEmpty
                 )
-                .frame(maxWidth: 200)
+                .frame(maxWidth: 240)
+                .keyboardShortcut(.return, modifiers: .command)
             }
             .padding(.horizontal, MSTheme.pagePadding)
             .padding(.vertical, 14)
             .background(MSTheme.canvas.opacity(0.95))
         }
-    }
-
-    private var titleText: String {
-        if session.results.isEmpty {
-            return "Results"
-        }
-        return "Found \(ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file))"
-    }
-
-    private var selectedSubtitle: String {
-        "Selected \(ByteCountFormatter.string(fromByteCount: selectedBytes, countStyle: .file))"
     }
 }
 

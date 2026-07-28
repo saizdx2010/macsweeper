@@ -7,9 +7,29 @@ final class AuditLogService: ObservableObject {
         let id: UUID
         let timestamp: Date
         let categoryID: String
+        /// Human label when recorded; older history entries may omit this.
+        let categoryLabel: String?
         let path: String
         let byteCount: Int64
         let destination: String
+
+        init(
+            id: UUID = UUID(),
+            timestamp: Date,
+            categoryID: String,
+            categoryLabel: String? = nil,
+            path: String,
+            byteCount: Int64,
+            destination: String
+        ) {
+            self.id = id
+            self.timestamp = timestamp
+            self.categoryID = categoryID
+            self.categoryLabel = categoryLabel
+            self.path = path
+            self.byteCount = byteCount
+            self.destination = destination
+        }
     }
 
     struct SessionSummary: Equatable {
@@ -53,6 +73,7 @@ final class AuditLogService: ObservableObject {
                     id: UUID(),
                     timestamp: now,
                     categoryID: item.categoryID,
+                    categoryLabel: item.categoryLabel,
                     path: privacyPath(item.originalPath),
                     byteCount: item.byteCount,
                     destination: privacyPath(item.trashURL.path)
@@ -77,6 +98,7 @@ final class AuditLogService: ObservableObject {
             items.append(
                 CleanupService.MovedItem(
                     categoryID: "empty_trash",
+                    categoryLabel: "Empty Trash",
                     originalPath: trashPath,
                     trashURL: URL(fileURLWithPath: trashPath, isDirectory: true),
                     byteCount: emptiedBytes

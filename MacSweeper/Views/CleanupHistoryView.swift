@@ -5,6 +5,8 @@ struct CleanupHistoryView: View {
     @EnvironmentObject private var auditLog: AuditLogService
     @Binding var path: NavigationPath
 
+    @State private var labelsByID: [String: String] = [:]
+
     private static let relativeFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .short
@@ -65,13 +67,22 @@ struct CleanupHistoryView: View {
                 }
             }
         }
+        .task {
+            await loadLabels()
+        }
     }
 
     private func historyRow(_ entry: AuditLogService.Entry) -> some View {
-        MSCard {
+        let label = CategoryLabelResolver.displayLabel(
+            categoryID: entry.categoryID,
+            storedLabel: entry.categoryLabel,
+            labelsByID: labelsByID
+        )
+
+        return MSCard {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(entry.categoryID.replacingOccurrences(of: "_", with: " ").capitalized)
+                    Text(label)
                         .font(.body.weight(.medium))
                     Spacer()
                     Text(ByteCountFormatter.string(fromByteCount: entry.byteCount, countStyle: .file))
@@ -91,6 +102,12 @@ struct CleanupHistoryView: View {
                     .foregroundStyle(.tertiary)
             }
         }
+        .contextMenu {
+            Button("Reveal in Finder") {
+                let absolute = absolutePath(fromPrivacyPath: entry.path)
+                FinderReveal.reveal(path: absolute)
+            }
+        }
     }
 
     private func displayPath(_ path: String) -> String {
@@ -103,9 +120,26 @@ struct CleanupHistoryView: View {
         return path
     }
 
+    private func absolutePath(fromPrivacyPath path: String) -> String {
+        if path == "~" { return NSHomeDirectory() }
+        if path.hasPrefix("~/") {
+            return NSHomeDirectory() + String(path.dropFirst(1))
+        }
+        return path
+    }
+
     private func openTrash() {
         let trash = URL(fileURLWithPath: "\(NSHomeDirectory())/.Trash", isDirectory: true)
         NSWorkspace.shared.open(trash)
+    }
+
+    private func loadLabels() async {
+        do {
+            let categories = try await ScanEngine().loadCategories()
+            labelsByID = CategoryLabelResolver.labelsByID(from: categories)
+        } catch {
+            labelsByID = [:]
+        }
     }
 }
 

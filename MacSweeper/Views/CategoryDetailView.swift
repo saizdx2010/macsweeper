@@ -8,10 +8,11 @@ struct CategoryDetailView: View {
     @Binding var path: NavigationPath
 
     @State private var didCopyCommand = false
+    @State private var copyResetTask: Task<Void, Never>?
     @State private var ageFilter: AgeFilter = .any
     @State private var sizeFilter: SizeFilter = .any
-
-    private let maxDisplayedPaths = 200
+    @State private var searchText = ""
+    @State private var displayLimit = DetailPathQuery.pageSize
 
     private var listsIndividualItems: Bool {
         result.category.scan == .listChildren
@@ -20,19 +21,20 @@ struct CategoryDetailView: View {
     }
 
     private var showsFilters: Bool {
-        result.category.id == "old_downloads" || result.category.id == "mail_downloads"
+        result.supportsItemSelection
+            && (result.category.scan == .listChildren || result.category.scan == .findNamedDirs)
     }
 
     private var filteredPaths: [ScannedPath] {
-        result.paths.filter { pathMatchesFilters($0) }
+        result.paths.filter { pathMatchesFilters($0) && DetailPathQuery.matchesSearch($0, query: searchText) }
     }
 
     private var displayedPaths: [ScannedPath] {
-        Array(filteredPaths.prefix(maxDisplayedPaths))
+        DetailPathQuery.displayedPaths(filteredPaths, limit: displayLimit)
     }
 
     private var omittedPathCount: Int {
-        max(0, filteredPaths.count - maxDisplayedPaths)
+        DetailPathQuery.omittedCount(total: filteredPaths.count, limit: displayLimit)
     }
 
     private var itemsSectionTitle: String {
@@ -66,6 +68,10 @@ struct CategoryDetailView: View {
                         filtersCard
                     }
 
+                    if result.supportsItemSelection || !result.paths.isEmpty {
+                        searchField
+                    }
+
                     if result.supportsItemSelection {
                         selectionToolbar
                     }
@@ -80,6 +86,18 @@ struct CategoryDetailView: View {
             subtitle: selectedSubtitle,
             onBack: { AppNavigation.popLast($path) }
         )
+        .onChange(of: searchText) { _, _ in
+            displayLimit = DetailPathQuery.pageSize
+        }
+        .onChange(of: ageFilter) { _, _ in
+            displayLimit = DetailPathQuery.pageSize
+        }
+        .onChange(of: sizeFilter) { _, _ in
+            displayLimit = DetailPathQuery.pageSize
+        }
+        .onDisappear {
+            copyResetTask?.cancel()
+        }
     }
 
     // MARK: - Cards
@@ -126,6 +144,12 @@ struct CategoryDetailView: View {
                     NSPasteboard.general.setString(command, forType: .string)
                     #endif
                     didCopyCommand = true
+                    copyResetTask?.cancel()
+                    copyResetTask = Task {
+                        try? await Task.sleep(for: .seconds(2))
+                        guard !Task.isCancelled else { return }
+                        didCopyCommand = false
+                    }
                 }
                 .disabled(didCopyCommand)
 
@@ -134,6 +158,32 @@ struct CategoryDetailView: View {
                     .foregroundStyle(.tertiary)
             }
         }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField("Search paths", text: $searchText)
+                .textFieldStyle(.plain)
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.msActionable)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(MSTheme.cardFill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(MSTheme.cardStroke, lineWidth: 1)
+        )
     }
 
     private var filtersCard: some View {
@@ -227,18 +277,24 @@ struct CategoryDetailView: View {
                     Text("No items match the current filters.")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(displayedPaths) { item in
-                        pathRow(for: item)
-                        if item.id != displayedPaths.last?.id {
-                            Divider().opacity(0.4)
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(displayedPaths) { item in
+                            pathRow(for: item)
+                            if item.id != displayedPaths.last?.id {
+                                Divider().opacity(0.4)
+                            }
                         }
                     }
                     if omittedPathCount > 0 {
-                        Text("And \(omittedPathCount) more…")
-                            .foregroundStyle(.secondary)
+                        Button("Show more (\(omittedPathCount) remaining)") {
+                            displayLimit += DetailPathQuery.pageSize
+                        }
+                        .buttonStyle(.msActionable)
+                        .font(.callout.weight(.medium))
+                        .foregroundStyle(MSTheme.accent)
                     }
                     if listsIndividualItems {
-                        Text("\(filteredPaths.count) shown · sizes include folder contents")
+                        Text("\(min(displayLimit, filteredPaths.count)) of \(filteredPaths.count) shown · sizes include folder contents")
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                     }
@@ -268,6 +324,7 @@ struct CategoryDetailView: View {
                 Image(systemName: itemIconName(for: item.path))
                     .foregroundStyle(.secondary)
                     .frame(width: 16)
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.displayName)
@@ -291,8 +348,39 @@ struct CategoryDetailView: View {
             Text(ByteCountFormatter.string(fromByteCount: item.byteCount, countStyle: .file))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
+
+            Button {
+                FinderReveal.reveal(path: item.path)
+            } label: {
+                Image(systemName: "arrow.forward.circle")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.msActionable)
+            .help("Reveal in Finder")
+            .accessibilityLabel("Reveal in Finder")
         }
+        .padding(.vertical, 6)
         .opacity(item.isSelected || !result.supportsItemSelection ? 1 : 0.55)
+        .contextMenu {
+            Button("Reveal in Finder") {
+                FinderReveal.reveal(path: item.path)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(pathAccessibilityLabel(for: item))
+    }
+
+    private func pathAccessibilityLabel(for item: ScannedPath) -> String {
+        let size = ByteCountFormatter.string(fromByteCount: item.byteCount, countStyle: .file)
+        let name = listsIndividualItems ? item.displayName : item.displayPath
+        let selection: String
+        if result.supportsItemSelection {
+            selection = item.isSelected ? "Selected. " : "Not selected. "
+        } else {
+            selection = ""
+        }
+        return "\(selection)\(name), \(size)"
     }
 
     // MARK: - Actions

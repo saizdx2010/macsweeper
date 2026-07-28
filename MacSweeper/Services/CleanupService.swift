@@ -24,15 +24,37 @@ actor CleanupService {
     struct MovedItem: Equatable, Identifiable, Sendable {
         var id: String { originalPath }
         let categoryID: String
+        let categoryLabel: String?
         let originalPath: String
         let trashURL: URL
         let byteCount: Int64
+
+        init(
+            categoryID: String,
+            categoryLabel: String? = nil,
+            originalPath: String,
+            trashURL: URL,
+            byteCount: Int64
+        ) {
+            self.categoryID = categoryID
+            self.categoryLabel = categoryLabel
+            self.originalPath = originalPath
+            self.trashURL = trashURL
+            self.byteCount = byteCount
+        }
     }
 
     struct Failure: Equatable, Identifiable, Sendable {
         var id: String { path }
         let path: String
         let message: String
+    }
+
+    /// Category-level progress while moving items to Trash.
+    struct Progress: Equatable, Sendable {
+        let label: String
+        let current: Int
+        let total: Int
     }
 
     struct Outcome: Equatable, Sendable {
@@ -47,8 +69,7 @@ actor CleanupService {
             freedBytes: 0,
             itemCount: 0,
             moved: [],
-            failures: [],
-            emptiedTrash: false
+            failures: [],            emptiedTrash: false
         )
     }
 
@@ -120,7 +141,11 @@ actor CleanupService {
     }
 
     /// Moves paths to Trash and/or permanently empties Trash when selected.
-    func moveToTrash(_ results: [ScanResult]) async throws -> Outcome {
+    /// - Parameter onProgress: Invoked on the cooperative task before each category starts.
+    func moveToTrash(
+        _ results: [ScanResult],
+        onProgress: (@Sendable (Progress) async -> Void)? = nil
+    ) async throws -> Outcome {
         var moved: [MovedItem] = []
         var failures: [Failure] = []
         var emptiedTrash = false
@@ -128,9 +153,19 @@ actor CleanupService {
         var emptiedCount = 0
 
         let selected = results.compactMap { $0.selectingOnlyCheckedPaths() }
+        let total = selected.count
 
-        for result in selected {
+        for (offset, result) in selected.enumerated() {
             try Task.checkCancellation()
+
+            let progress = Progress(
+                label: result.category.label,
+                current: offset + 1,
+                total: max(total, 1)
+            )
+            if let onProgress {
+                await onProgress(progress)
+            }
 
             if result.category.action == .emptyTrash {
                 let emptyOutcome = try emptyTrashContents(byteHint: result.totalBytes)
@@ -180,6 +215,7 @@ actor CleanupService {
                     moved.append(
                         MovedItem(
                             categoryID: result.category.id,
+                            categoryLabel: result.category.label,
                             originalPath: path,
                             trashURL: trashURL,
                             byteCount: scanned.byteCount

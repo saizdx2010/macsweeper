@@ -15,6 +15,7 @@ struct CleanFlowView: View {
     @State private var isRestoring = false
     @State private var didUndo = false
     @State private var showDoneCelebration = false
+    @State private var cleanProgress: CleanupService.Progress?
 
     private let cleanup = CleanupService()
 
@@ -36,6 +37,10 @@ struct CleanFlowView: View {
 
     private var includesMoveToTrash: Bool {
         results.contains { $0.category.action != .emptyTrash }
+    }
+
+    private var needsExtraConfirmation: Bool {
+        CleanConfirmPolicy.requiresConfirmation(results: results)
     }
 
     private var categoryWord: String {
@@ -103,9 +108,25 @@ struct CleanFlowView: View {
 
     private var workingLabel: String {
         if isRestoring { return "Restoring…" }
+        if let progress = cleanProgress {
+            if includesEmptyTrash && progress.label.lowercased().contains("trash") {
+                return "Emptying Trash…"
+            }
+            return "Moving \(progress.label)…"
+        }
         if includesEmptyTrash && !includesMoveToTrash { return "Emptying Trash…" }
         if includesEmptyTrash { return "Cleaning \(results.count) \(categoryWord)…" }
         return "Moving \(results.count) \(categoryWord)…"
+    }
+
+    private var workingSubtitle: String {
+        if isRestoring {
+            return "This usually only takes a moment"
+        }
+        if let progress = cleanProgress, progress.total > 0 {
+            return "\(progress.current) of \(progress.total)"
+        }
+        return "This usually only takes a moment"
     }
 
     private var confirmationTitle: String {
@@ -194,9 +215,13 @@ struct CleanFlowView: View {
                 .tint(MSTheme.accent)
             Text(workingLabel)
                 .font(MSTheme.titleFont)
-            Text("This usually only takes a moment")
+                .multilineTextAlignment(.center)
+                .animation(.easeInOut(duration: 0.2), value: cleanProgress?.label)
+            Text(workingSubtitle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .animation(.easeInOut(duration: 0.2), value: cleanProgress?.current)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -322,8 +347,10 @@ struct CleanFlowView: View {
     private func requestClean() {
         if includesEmptyTrash && !FullDiskAccessService.isGranted() {
             showFDAPrompt = true
-        } else {
+        } else if needsExtraConfirmation {
             showConfirmation = true
+        } else {
+            Task { await performClean() }
         }
     }
 
@@ -331,8 +358,13 @@ struct CleanFlowView: View {
         phase = .working
         errorMessage = nil
         didUndo = false
+        cleanProgress = nil
         do {
-            let result = try await cleanup.moveToTrash(results)
+            let result = try await cleanup.moveToTrash(results) { progress in
+                await MainActor.run {
+                    cleanProgress = progress
+                }
+            }
             outcome = result
             auditLog.finishClean(outcome: result)
             phase = .done

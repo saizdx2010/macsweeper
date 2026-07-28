@@ -134,10 +134,12 @@ struct HomeView: View {
         .onChange(of: path.count) { _, count in
             if count == 0 {
                 refreshHomeState()
+                reanimateRing()
             }
         }
         .onChange(of: auditLog.lastClean) { _, _ in
             snapshot = diskSpace.currentSnapshot()
+            reanimateRing()
         }
     }
 
@@ -184,6 +186,14 @@ struct HomeView: View {
             }
         }
         .animation(.easeOut(duration: 0.8), value: ringDrawn)
+        .accessibilityValue(diskRingAccessibilityValue)
+    }
+
+    private var diskRingAccessibilityValue: String {
+        guard let snapshot else { return "Disk space unavailable" }
+        let free = ByteCountFormatter.string(fromByteCount: snapshot.freeBytes, countStyle: .file)
+        let pct = Int((snapshot.usedFraction * 100).rounded())
+        return "\(free) free, \(pct) percent used"
     }
 
     private func infoColumn(alignment: HorizontalAlignment) -> some View {
@@ -378,6 +388,13 @@ struct HomeView: View {
     private func refreshHomeState() {
         snapshot = diskSpace.currentSnapshot()
         hasFullDiskAccess = FullDiskAccessService.isGranted()
+    }
+
+    private func reanimateRing() {
+        ringDrawn = false
+        withAnimation(.easeOut(duration: 0.8)) {
+            ringDrawn = true
+        }
     }
 }
 
