@@ -29,6 +29,7 @@
 		7D4DDD4FFCF5586B020279A4 /* CategoryCardRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18B36962518B369841DDF36 /* CategoryCardRow.swift */; };
 		8B1CA678A0A7A1B1FD2A2F92 /* CleanFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42701C072F2FCC237BBE4588 /* CleanFlowView.swift */; };
 		8FA57A142DAC66B8D3CA90B0 /* ScanCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803C24AB453B82AEAE0D8127 /* ScanCategory.swift */; };
+		9E72539C3B6D483365D19F1D /* DetailPathFilters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292B130FAC09992001C459AD /* DetailPathFilters.swift */; };
 		9F780ED58C215B516D4B6CBB /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A42846CF146659AB5D63326C /* HomeView.swift */; };
 		A3C69125D73AAABFAA1D22B9 /* FinderReveal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C8E3FE949431A2E7D24D582 /* FinderReveal.swift */; };
 		AA4E6F9C3D3875406C04D112 /* CategoryIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F2D49DB28A2D3A92A08E42 /* CategoryIcon.swift */; };
@@ -38,6 +39,7 @@
 		C5259E6D5AA208680DA72AF5 /* cleanup-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = F74B6AAA7D166E0BA57A1EBE /* cleanup-rules.json */; };
 		CB29CC1C764F0BE791A46E19 /* RiskLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2CCB0413DD8BB7F38B70A5 /* RiskLevel.swift */; };
 		D0281004C70D6D8596E30015 /* ScanSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEEEBA317F2E6766DEDA0F7 /* ScanSession.swift */; };
+		D54280D6240CCD85DDB89812 /* PathSafetyPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369DBB39C973A9248B109CE3 /* PathSafetyPolicy.swift */; };
 		D93B87E91E3292DD440ACC01 /* RuleCoverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 346291A9BD2620932030C501 /* RuleCoverage.swift */; };
 		DC8DD40FBD8796026CBBB232 /* NavigationChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88941B95C83E63C7DEDDD0E1 /* NavigationChrome.swift */; };
 		E36DF4C40B093DBF87D5A08E /* ScanningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F34E37FBB0DDB91BDEACF /* ScanningView.swift */; };
@@ -64,9 +66,11 @@
 		130BEDC5315FFCE5F30C5530 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		22FE54B1BAE4E12DD6D53D25 /* ScanResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanResultsView.swift; sourceTree = "<group>"; };
 		271A0897AA42C150138B9D00 /* DiskMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskMeasurement.swift; sourceTree = "<group>"; };
+		292B130FAC09992001C459AD /* DetailPathFilters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailPathFilters.swift; sourceTree = "<group>"; };
 		2A702EAA2CE3FB7AA2AA4DA7 /* DiskSpaceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskSpaceService.swift; sourceTree = "<group>"; };
 		33874FBF0CFF80B019A86F6B /* MSTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MSTheme.swift; sourceTree = "<group>"; };
 		346291A9BD2620932030C501 /* RuleCoverage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleCoverage.swift; sourceTree = "<group>"; };
+		369DBB39C973A9248B109CE3 /* PathSafetyPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathSafetyPolicy.swift; sourceTree = "<group>"; };
 		42701C072F2FCC237BBE4588 /* CleanFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanFlowView.swift; sourceTree = "<group>"; };
 		474F34E37FBB0DDB91BDEACF /* ScanningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanningView.swift; sourceTree = "<group>"; };
 		4B9533BADF66B59E75B93583 /* UXPolishTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UXPolishTests.swift; sourceTree = "<group>"; };
@@ -142,12 +146,14 @@
 				9B0A941F1054C916099FE5EE /* CategoryLabelResolver.swift */,
 				D270DE2DE5E185E296565D32 /* CleanConfirmPolicy.swift */,
 				03415387026D5AE19CD73007 /* CleanupService.swift */,
+				292B130FAC09992001C459AD /* DetailPathFilters.swift */,
 				CBD4211F4E985E0429E56D80 /* DetailPathQuery.swift */,
 				E85F4632C4A68AF78377CD40 /* DiskBrowseService.swift */,
 				271A0897AA42C150138B9D00 /* DiskMeasurement.swift */,
 				2A702EAA2CE3FB7AA2AA4DA7 /* DiskSpaceService.swift */,
 				0C8E3FE949431A2E7D24D582 /* FinderReveal.swift */,
 				D44BEC7001E3F9DF9829CD4F /* FullDiskAccessService.swift */,
+				369DBB39C973A9248B109CE3 /* PathSafetyPolicy.swift */,
 				346291A9BD2620932030C501 /* RuleCoverage.swift */,
 				A88BF90177A8C59D9B06421D /* ScanEngine.swift */,
 				4CEEEBA317F2E6766DEDA0F7 /* ScanSession.swift */,
@@ -326,6 +332,7 @@
 				8B1CA678A0A7A1B1FD2A2F92 /* CleanFlowView.swift in Sources */,
 				1030F66E8D9BEA7832A38E16 /* CleanupHistoryView.swift in Sources */,
 				B7EACD8A3AF80B09F6017925 /* CleanupService.swift in Sources */,
+				9E72539C3B6D483365D19F1D /* DetailPathFilters.swift in Sources */,
 				5A4E76D001DA34878E00AD18 /* DetailPathQuery.swift in Sources */,
 				660ED868B349C28C73877B56 /* DiskBrowseService.swift in Sources */,
 				39457B398A1FEB68747D7CC6 /* DiskBrowseView.swift in Sources */,
@@ -338,6 +345,7 @@
 				B9EDD1776C15B4DD8AB5BF4F /* MSTheme.swift in Sources */,
 				1611116B64EC3BC736FD7407 /* MacSweeperApp.swift in Sources */,
 				DC8DD40FBD8796026CBBB232 /* NavigationChrome.swift in Sources */,
+				D54280D6240CCD85DDB89812 /* PathSafetyPolicy.swift in Sources */,
 				B574918FB686004114B0FCA2 /* RiskBadge.swift in Sources */,
 				CB29CC1C764F0BE791A46E19 /* RiskLevel.swift in Sources */,
 				D93B87E91E3292DD440ACC01 /* RuleCoverage.swift in Sources */,

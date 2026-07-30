@@ -9,8 +9,8 @@ struct CategoryDetailView: View {
 
     @State private var didCopyCommand = false
     @State private var copyResetTask: Task<Void, Never>?
-    @State private var ageFilter: AgeFilter = .any
-    @State private var sizeFilter: SizeFilter = .any
+    @State private var ageFilter: DetailAgeFilter = .any
+    @State private var sizeFilter: DetailSizeFilter = .any
     @State private var searchText = ""
     @State private var displayLimit = DetailPathQuery.pageSize
 
@@ -197,14 +197,14 @@ struct CategoryDetailView: View {
                     icon: "clock",
                     title: "Age",
                     selection: $ageFilter,
-                    options: AgeFilter.allCases
+                    options: DetailAgeFilter.allCases
                 ) { $0.label }
 
                 filterChipRow(
                     icon: "externaldrive",
                     title: "Size",
                     selection: $sizeFilter,
-                    options: SizeFilter.allCases
+                    options: DetailSizeFilter.allCases
                 ) { $0.label }
 
                 Text("Filters change what’s shown. Use Select visible to check matching items.")
@@ -400,9 +400,7 @@ struct CategoryDetailView: View {
     }
 
     private func pathMatchesFilters(_ item: ScannedPath) -> Bool {
-        if !ageFilter.matches(item.contentModificationDate) { return false }
-        if !sizeFilter.matches(item.byteCount) { return false }
-        return true
+        DetailPathQuery.matchesFilters(item, age: ageFilter, size: sizeFilter)
     }
 
     private func itemIconName(for path: String) -> String {
@@ -475,59 +473,6 @@ private struct FilterChip: View {
     }
 }
 
-private enum AgeFilter: String, CaseIterable, Identifiable {
-    case any
-    case older30
-    case older90
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .any: return "Any age"
-        case .older30: return ">30 days"
-        case .older90: return ">90 days"
-        }
-    }
-
-    func matches(_ date: Date?) -> Bool {
-        switch self {
-        case .any:
-            return true
-        case .older30:
-            guard let date else { return false }
-            return date < Date().addingTimeInterval(-30 * 24 * 60 * 60)
-        case .older90:
-            guard let date else { return false }
-            return date < Date().addingTimeInterval(-90 * 24 * 60 * 60)
-        }
-    }
-}
-
-private enum SizeFilter: String, CaseIterable, Identifiable {
-    case any
-    case over100MB
-    case over1GB
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .any: return "Any size"
-        case .over100MB: return ">100 MB"
-        case .over1GB: return ">1 GB"
-        }
-    }
-
-    func matches(_ bytes: Int64) -> Bool {
-        switch self {
-        case .any: return true
-        case .over100MB: return bytes >= 100_000_000
-        case .over1GB: return bytes >= 1_000_000_000
-        }
-    }
-}
-
 #Preview {
     NavigationStack {
         CategoryDetailView(
@@ -539,7 +484,8 @@ private enum SizeFilter: String, CaseIterable, Identifiable {
                         paths: ["~/Downloads"],
                         risk: .moderate,
                         description: "Everything currently in Downloads. Review carefully — may include keepers.",
-                        scan: .listChildren
+                        scan: .listChildren,
+                        icon: "arrow.down.circle"
                     ),
                     paths: [
                         ScannedPath(

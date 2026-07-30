@@ -14,16 +14,6 @@ actor ScanEngine {
     private let fileManager: FileManager
     private let homeDirectory: String
 
-    /// Relative home prefixes never entered during discovery walks.
-    private let discoverySkipPrefixes: [String] = [
-        "Library",
-        "Documents",
-        "Pictures",
-        "Music",
-        "Movies",
-        ".Trash",
-    ]
-
     init(bundle: Bundle = .main, fileManager: FileManager = .default) {
         self.rulesURL = bundle.url(forResource: "cleanup-rules", withExtension: "json")
         self.fileManager = fileManager
@@ -155,7 +145,7 @@ actor ScanEngine {
 
     private func measureFixedPaths(_ category: ScanCategory) throws -> ScanResult? {
         var scannedPaths: [ScannedPath] = []
-        var seenHardLinks = Set<FileIdentity>()
+        var deduper = DiskMeasurement.Deduper()
 
         for pathString in category.paths {
             try Task.checkCancellation()
@@ -172,13 +162,13 @@ actor ScanEngine {
                 try appendMeasuredChildren(
                     of: expanded,
                     into: &scannedPaths,
-                    seenHardLinks: &seenHardLinks
+                    deduper: &deduper
                 )
                 continue
             }
 
             let url = URL(fileURLWithPath: expanded, isDirectory: isDirectory.boolValue)
-            let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
+            let bytes = try measureAllocatedSize(at: url, deduper: &deduper)
             guard bytes > 0 else { continue }
 
             scannedPaths.append(
@@ -203,7 +193,7 @@ actor ScanEngine {
     private func appendMeasuredChildren(
         of directoryPath: String,
         into scannedPaths: inout [ScannedPath],
-        seenHardLinks: inout Set<FileIdentity>
+        deduper: inout DiskMeasurement.Deduper
     ) throws {
         let standardized = (directoryPath as NSString).standardizingPath
         if standardized == RunningAppSafety.bundlePath {
@@ -232,7 +222,7 @@ actor ScanEngine {
                 continue
             }
             let url = URL(fileURLWithPath: child.path, isDirectory: childIsDirectory.boolValue)
-            let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
+            let bytes = try measureAllocatedSize(at: url, deduper: &deduper)
             guard bytes > 0 else { continue }
             scannedPaths.append(
                 makeScannedPath(path: url.path, byteCount: bytes, isSelected: false)
@@ -243,7 +233,7 @@ actor ScanEngine {
     /// Manual + guide: appear when any configured path exists (size optional).
     private func measureManualGuide(_ category: ScanCategory) throws -> ScanResult? {
         var scannedPaths: [ScannedPath] = []
-        var seenHardLinks = Set<FileIdentity>()
+        var deduper = DiskMeasurement.Deduper()
         var anyExists = false
 
         for pathString in category.paths {
@@ -262,7 +252,7 @@ actor ScanEngine {
             }
 
             let url = URL(fileURLWithPath: expanded, isDirectory: isDirectory.boolValue)
-            let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
+            let bytes = try measureAllocatedSize(at: url, deduper: &deduper)
             if bytes > 0 {
                 scannedPaths.append(
                     makeScannedPath(path: expanded, byteCount: bytes, isSelected: false)
@@ -304,7 +294,7 @@ actor ScanEngine {
         isSelected: Bool
     ) throws -> ScanResult? {
         var scannedPaths: [ScannedPath] = []
-        var seenHardLinks = Set<FileIdentity>()
+        var deduper = DiskMeasurement.Deduper()
 
         for pathString in category.paths {
             try Task.checkCancellation()
@@ -343,7 +333,7 @@ actor ScanEngine {
                     isDirectory: itemIsDirectory.boolValue
                 )
                 let values = try? url.resourceValues(forKeys: [.contentModificationDateKey])
-                let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
+                let bytes = try measureAllocatedSize(at: url, deduper: &deduper)
                 guard bytes > 0 else { continue }
                 scannedPaths.append(
                     makeScannedPath(
@@ -381,14 +371,14 @@ actor ScanEngine {
         var rootPaths: [String] = category.paths.map(expandHome)
         for extra in extraDevRoots {
             let standardized = (extra as NSString).standardizingPath
-            guard isPathUnderHome(standardized) else { continue }
+            guard PathSafetyPolicy.isPathUnderHome(standardized, homeDirectory: homeDirectory) else { continue }
             rootPaths.append(standardized)
         }
 
         for rootPath in rootPaths {
             try Task.checkCancellation()
             let standardized = (rootPath as NSString).standardizingPath
-            guard isPathUnderHome(standardized) else { continue }
+            guard PathSafetyPolicy.isPathUnderHome(standardized, homeDirectory: homeDirectory) else { continue }
             guard seenRoots.insert(standardized).inserted else { continue }
 
             var isDirectory: ObjCBool = false
@@ -408,12 +398,12 @@ actor ScanEngine {
         guard !foundURLs.isEmpty else { return nil }
 
         var scannedPaths: [ScannedPath] = []
-        var seenHardLinks = Set<FileIdentity>()
+        var deduper = DiskMeasurement.Deduper()
         let selected = category.risk.isSelectedByDefault
 
         for url in foundURLs {
             try Task.checkCancellation()
-            let bytes = try measureAllocatedSize(at: url, seenHardLinks: &seenHardLinks)
+            let bytes = try measureAllocatedSize(at: url, deduper: &deduper)
             guard bytes > 0 else { continue }
             scannedPaths.append(
                 makeScannedPath(path: url.path, byteCount: bytes, isSelected: selected)
@@ -470,12 +460,20 @@ actor ScanEngine {
                 if names.contains(name) {
                     if isSymlink {
                         let resolved = child.resolvingSymlinksInPath()
-                        guard isPathUnderHome(resolved.path), !isProtectedDiscoveryPath(resolved.path) else {
+                        guard PathSafetyPolicy.isPathUnderHome(resolved.path, homeDirectory: homeDirectory),
+                              !PathSafetyPolicy.isProtectedDiscoveryPath(
+                                resolved.path,
+                                homeDirectory: homeDirectory
+                              )
+                        else {
                             continue
                         }
                         found.append(resolved)
                     } else {
-                        guard !isProtectedDiscoveryPath(child.path) else { continue }
+                        guard !PathSafetyPolicy.isProtectedDiscoveryPath(
+                            child.path,
+                            homeDirectory: homeDirectory
+                        ) else { continue }
                         found.append(child)
                     }
                     // Do not descend into matched dirs (no nested node_modules).
@@ -493,37 +491,15 @@ actor ScanEngine {
     }
 
     private func shouldDescend(into url: URL) -> Bool {
-        if isProtectedDiscoveryPath(url.path) { return false }
+        if PathSafetyPolicy.isProtectedDiscoveryPath(url.path, homeDirectory: homeDirectory) {
+            return false
+        }
         // Never walk into Library even under Desktop/project trees via symlink.
         let name = url.lastPathComponent
         if name == "Library" || name == "node_modules" || name == ".git" {
             return false
         }
         return true
-    }
-
-    private func isPathUnderHome(_ path: String) -> Bool {
-        let home = URL(fileURLWithPath: homeDirectory).resolvingSymlinksInPath().path
-        let standardized = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
-        return standardized == home || standardized.hasPrefix(home + "/")
-    }
-
-    private func isProtectedDiscoveryPath(_ path: String) -> Bool {
-        let standardized = (path as NSString).standardizingPath
-        guard isPathUnderHome(standardized) else { return true }
-        guard standardized != homeDirectory else { return true }
-
-        let relative = String(standardized.dropFirst(homeDirectory.count + 1))
-        for prefix in discoverySkipPrefixes {
-            if relative == prefix || relative.hasPrefix(prefix + "/") {
-                // Allow Documents/GitHub specifically (it's a configured root).
-                if prefix == "Documents", relative == "Documents/GitHub" || relative.hasPrefix("Documents/GitHub/") {
-                    return false
-                }
-                return true
-            }
-        }
-        return false
     }
 
     // MARK: - Path helpers
@@ -543,12 +519,12 @@ actor ScanEngine {
     /// Allocated size with hard-link dedupe (counts each inode once per category).
     private func measureAllocatedSize(
         at url: URL,
-        seenHardLinks: inout Set<FileIdentity>
+        deduper: inout DiskMeasurement.Deduper
     ) throws -> Int64 {
         try DiskMeasurement.measureAllocatedSize(
             at: url,
             fileManager: fileManager,
-            seenHardLinks: &seenHardLinks
+            deduper: &deduper
         )
     }
 }

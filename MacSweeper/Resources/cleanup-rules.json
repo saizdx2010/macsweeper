@@ -8,7 +8,8 @@
       "~/Library/Application Support/Google/Chrome/Default/Code Cache"
     ],
     "risk": "safe",
-    "description": "Temporary files; Chrome rebuilds these automatically."
+    "description": "Temporary files; Chrome rebuilds these automatically.",
+    "icon": "globe"
   },
   {
     "id": "browser_safari_cache",
@@ -19,7 +20,8 @@
       "~/Library/Caches/com.apple.WebKit.WebContent"
     ],
     "risk": "safe",
-    "description": "Temporary files; Safari rebuilds these automatically."
+    "description": "Temporary files; Safari rebuilds these automatically.",
+    "icon": "globe"
   },
   {
     "id": "browser_firefox_cache",
@@ -29,7 +31,8 @@
       "~/Library/Caches/org.mozilla.firefox"
     ],
     "risk": "safe",
-    "description": "Temporary files; Firefox rebuilds these automatically."
+    "description": "Temporary files; Firefox rebuilds these automatically.",
+    "icon": "globe"
   },
   {
     "id": "browser_edge_cache",
@@ -40,7 +43,8 @@
       "~/Library/Application Support/Microsoft Edge/Default/Code Cache"
     ],
     "risk": "safe",
-    "description": "Temporary files; Edge rebuilds these automatically."
+    "description": "Temporary files; Edge rebuilds these automatically.",
+    "icon": "globe"
   },
   {
     "id": "browser_brave_cache",
@@ -51,7 +55,8 @@
       "~/Library/Application Support/BraveSoftware/Brave-Browser/Default/Code Cache"
     ],
     "risk": "safe",
-    "description": "Temporary files; Brave rebuilds these automatically."
+    "description": "Temporary files; Brave rebuilds these automatically.",
+    "icon": "globe"
   },
   {
     "id": "browser_opera_cache",
@@ -63,7 +68,8 @@
       "~/Library/Application Support/com.operasoftware.Opera/GPUCache"
     ],
     "risk": "safe",
-    "description": "Temporary files; Opera rebuilds these automatically."
+    "description": "Temporary files; Opera rebuilds these automatically.",
+    "icon": "globe"
   },
   {
     "id": "slack_cache",
@@ -75,7 +81,8 @@
       "~/Library/Application Support/Slack/GPUCache"
     ],
     "risk": "safe",
-    "description": "Slack temporary files and Electron caches. Rebuilds as you use Slack."
+    "description": "Slack temporary files and Electron caches. Rebuilds as you use Slack.",
+    "icon": "internaldrive"
   },
   {
     "id": "zoom_cache",
@@ -86,7 +93,8 @@
       "~/Library/Logs/zoom.us"
     ],
     "risk": "safe",
-    "description": "Zoom caches and logs. Regenerated the next time you join a meeting."
+    "description": "Zoom caches and logs. Regenerated the next time you join a meeting.",
+    "icon": "internaldrive"
   },
   {
     "id": "discord_cache",
@@ -98,7 +106,8 @@
       "~/Library/Application Support/discord/GPUCache"
     ],
     "risk": "safe",
-    "description": "Discord temporary files. Rebuilds automatically."
+    "description": "Discord temporary files. Rebuilds automatically.",
+    "icon": "internaldrive"
   },
   {
     "id": "spotify_cache",
@@ -108,7 +117,8 @@
       "~/Library/Application Support/Spotify/PersistentCache"
     ],
     "risk": "safe",
-    "description": "Spotify app caches. Regenerated as you use Spotify."
+    "description": "Spotify app caches. Regenerated as you use Spotify.",
+    "icon": "internaldrive"
   },
   {
     "id": "spotify_offline_storage",
@@ -117,7 +127,8 @@
       "~/Library/Application Support/Spotify/Storage"
     ],
     "risk": "moderate",
-    "description": "Offline/downloaded Spotify media. Cleaning removes offline tracks until you download them again."
+    "description": "Offline/downloaded Spotify media. Cleaning removes offline tracks until you download them again.",
+    "icon": "internaldrive"
   },
   {
     "id": "adobe_temp",
@@ -129,7 +140,8 @@
       "~/Library/Application Support/Adobe/Common/Media Cache"
     ],
     "risk": "safe",
-    "description": "Adobe regenerable caches and media cache files. Safe to remove; apps rebuild as needed."
+    "description": "Adobe regenerable caches and media cache files. Safe to remove; apps rebuild as needed.",
+    "icon": "internaldrive"
   },
   {
     "id": "electron_app_caches",
@@ -164,7 +176,8 @@
       "~/Library/Application Support/Miro/Code Cache"
     ],
     "risk": "safe",
-    "description": "Common Electron app caches (VS Code, Figma, Notion, Arc, Linear, Obsidian, Loom, Miro). Rebuild on next launch."
+    "description": "Common Electron app caches (VS Code, Figma, Notion, Arc, Linear, Obsidian, Loom, Miro). Rebuild on next launch.",
+    "icon": "internaldrive"
   },
   {
     "id": "jetbrains_caches",
@@ -174,7 +187,8 @@
       "~/Library/Logs/JetBrains"
     ],
     "risk": "safe",
-    "description": "IntelliJ / PyCharm / WebStorm / Rider caches and logs. IDEs rebuild indexes on next open."
+    "description": "IntelliJ / PyCharm / WebStorm / Rider caches and logs. IDEs rebuild indexes on next open.",
+    "icon": "internaldrive"
   },
   {
     "id": "messaging_app_caches",
@@ -190,7 +204,8 @@
       "~/Library/Application Support/Microsoft/Teams/GPUCache"
     ],
     "risk": "safe",
-    "description": "Telegram, WhatsApp, and Teams regenerable caches. Media may re-download when you open chats again."
+    "description": "Telegram, WhatsApp, and Teams regenerable caches. Media may re-download when you open chats again.",
+    "icon": "internaldrive"
   },
   {
     "id": "steam_caches",
@@ -202,7 +217,8 @@
       "~/Library/Application Support/Steam/shadercache"
     ],
     "risk": "safe",
-    "description": "Steam app, HTML, and shader caches. Games may rebuild shaders on next launch."
+    "description": "Steam app, HTML, and shader caches. Games may rebuild shaders on next launch.",
+    "icon": "internaldrive"
   },
   {
     "id": "user_app_caches",
@@ -218,35 +234,48 @@
       "~/Library/Caches/com.apple.nsurlsessiond"
     ],
     "risk": "safe",
-    "description": "Known regenerable app caches under ~/Library/Caches."
+    "description": "Known regenerable app caches under ~/Library/Caches.",
+    "icon": "internaldrive"
   },
   {
     "id": "user_logs",
     "label": "User logs",
-    "paths": ["~/Library/Logs"],
+    "paths": [
+      "~/Library/Logs"
+    ],
     "risk": "moderate",
-    "description": "Application log files. May contain paths, URLs, or tokens — review before cleaning. Regenerates as apps run."
+    "description": "Application log files. May contain paths, URLs, or tokens \u2014 review before cleaning. Regenerates as apps run.",
+    "icon": "doc.text"
   },
   {
     "id": "xcode_derived_data",
     "label": "Xcode DerivedData",
-    "paths": ["~/Library/Developer/Xcode/DerivedData"],
+    "paths": [
+      "~/Library/Developer/Xcode/DerivedData"
+    ],
     "risk": "safe",
-    "description": "Xcode build intermediates. Safe to remove; next build regenerates them. The folder for this running MacSweeper build is excluded so Clean cannot delete the live app."
+    "description": "Xcode build intermediates. Safe to remove; next build regenerates them. The folder for this running MacSweeper build is excluded so Clean cannot delete the live app.",
+    "icon": "hammer"
   },
   {
     "id": "xcode_archives",
     "label": "Xcode Archives",
-    "paths": ["~/Library/Developer/Xcode/Archives"],
+    "paths": [
+      "~/Library/Developer/Xcode/Archives"
+    ],
     "risk": "moderate",
-    "description": "Old app archives from Product → Archive. Review before cleaning if you still need them."
+    "description": "Old app archives from Product \u2192 Archive. Review before cleaning if you still need them.",
+    "icon": "hammer"
   },
   {
     "id": "xcode_ios_device_support",
     "label": "iOS DeviceSupport",
-    "paths": ["~/Library/Developer/Xcode/iOS DeviceSupport"],
+    "paths": [
+      "~/Library/Developer/Xcode/iOS DeviceSupport"
+    ],
     "risk": "safe",
-    "description": "Symbol files for connected iOS devices. Xcode re-downloads when needed."
+    "description": "Symbol files for connected iOS devices. Xcode re-downloads when needed.",
+    "icon": "hammer"
   },
   {
     "id": "xcode_other_device_support",
@@ -256,7 +285,8 @@
       "~/Library/Developer/Xcode/tvOS DeviceSupport"
     ],
     "risk": "safe",
-    "description": "Symbol files for connected watchOS and tvOS devices. Xcode re-downloads when needed."
+    "description": "Symbol files for connected watchOS and tvOS devices. Xcode re-downloads when needed.",
+    "icon": "hammer"
   },
   {
     "id": "core_simulator_caches",
@@ -266,23 +296,30 @@
       "~/Library/Logs/CoreSimulator"
     ],
     "risk": "safe",
-    "description": "Simulator caches and logs. Regenerated when you run simulators again."
+    "description": "Simulator caches and logs. Regenerated when you run simulators again.",
+    "icon": "internaldrive"
   },
   {
     "id": "mail_downloads",
     "label": "Mail downloads",
-    "paths": ["~/Library/Containers/com.apple.mail/Data/Library/Mail Downloads"],
+    "paths": [
+      "~/Library/Containers/com.apple.mail/Data/Library/Mail Downloads"
+    ],
     "risk": "moderate",
     "scan": "list_children",
-    "description": "Attachments Mail saved locally. May need re-download from the server."
+    "description": "Attachments Mail saved locally. May need re-download from the server.",
+    "icon": "arrow.down.circle"
   },
   {
     "id": "old_downloads",
     "label": "Downloads folder",
-    "paths": ["~/Downloads"],
+    "paths": [
+      "~/Downloads"
+    ],
     "risk": "moderate",
     "scan": "list_children",
-    "description": "Everything currently in Downloads. Review carefully — may include keepers. Use age/size filters in Detail."
+    "description": "Everything currently in Downloads. Review carefully \u2014 may include keepers. Use age/size filters in Detail.",
+    "icon": "arrow.down.circle"
   },
   {
     "id": "quicklook_thumbnails",
@@ -292,7 +329,8 @@
       "~/Library/Caches/CloudKit/com.apple.bird"
     ],
     "risk": "safe",
-    "description": "Thumbnail caches. Finder regenerates them as you browse files."
+    "description": "Thumbnail caches. Finder regenerates them as you browse files.",
+    "icon": "internaldrive"
   },
   {
     "id": "font_caches",
@@ -302,7 +340,8 @@
       "~/Library/Caches/com.apple.FontRegistry"
     ],
     "risk": "safe",
-    "description": "Font system caches. Regenerated by macOS as needed."
+    "description": "Font system caches. Regenerated by macOS as needed.",
+    "icon": "internaldrive"
   },
   {
     "id": "itunes_podcast_cache",
@@ -312,15 +351,19 @@
       "~/Library/Caches/com.apple.Music.Artwork"
     ],
     "risk": "safe",
-    "description": "Artwork and media service caches for Music and related apps."
+    "description": "Artwork and media service caches for Music and related apps.",
+    "icon": "internaldrive"
   },
   {
     "id": "empty_trash",
     "label": "Empty Trash",
-    "paths": ["~/.Trash"],
+    "paths": [
+      "~/.Trash"
+    ],
     "risk": "moderate",
     "action": "empty_trash",
-    "description": "Permanently deletes everything currently in Trash. Off by default. May need Full Disk Access for some items."
+    "description": "Permanently deletes everything currently in Trash. Off by default. May need Full Disk Access for some items.",
+    "icon": "trash"
   },
   {
     "id": "dev_node_modules",
@@ -336,9 +379,12 @@
     "risk": "risky",
     "group": "dev",
     "scan": "find_named_dirs",
-    "find_names": ["node_modules"],
+    "find_names": [
+      "node_modules"
+    ],
     "max_depth": 6,
-    "description": "npm/yarn/pnpm dependency folders under project roots. Safe to remove; reinstall with your package manager. Review paths before cleaning."
+    "description": "npm/yarn/pnpm dependency folders under project roots. Safe to remove; reinstall with your package manager. Review paths before cleaning.",
+    "icon": "shippingbox"
   },
   {
     "id": "dev_venvs",
@@ -354,9 +400,13 @@
     "risk": "risky",
     "group": "dev",
     "scan": "find_named_dirs",
-    "find_names": [".venv", "venv"],
+    "find_names": [
+      ".venv",
+      "venv"
+    ],
     "max_depth": 6,
-    "description": "Python virtual environments under project roots. Recreate with python -m venv or your project tool."
+    "description": "Python virtual environments under project roots. Recreate with python -m venv or your project tool.",
+    "icon": "chevron.left.forwardslash.chevron.right"
   },
   {
     "id": "dev_cargo_target",
@@ -372,9 +422,12 @@
     "risk": "risky",
     "group": "dev",
     "scan": "find_named_dirs",
-    "find_names": ["target"],
+    "find_names": [
+      "target"
+    ],
     "max_depth": 6,
-    "description": "Rust build output folders named target. Rebuild with cargo build. Review carefully — some non-Rust projects use a target folder."
+    "description": "Rust build output folders named target. Rebuild with cargo build. Review carefully \u2014 some non-Rust projects use a target folder.",
+    "icon": "hammer"
   },
   {
     "id": "dev_gradle",
@@ -384,15 +437,19 @@
     ],
     "risk": "moderate",
     "group": "dev",
-    "description": "Gradle dependency caches. Next build re-downloads what’s needed."
+    "description": "Gradle dependency caches. Next build re-downloads what\u2019s needed.",
+    "icon": "hammer"
   },
   {
     "id": "dev_cocoapods",
     "label": "CocoaPods cache",
-    "paths": ["~/Library/Caches/CocoaPods"],
+    "paths": [
+      "~/Library/Caches/CocoaPods"
+    ],
     "risk": "moderate",
     "group": "dev",
-    "description": "Downloaded pod specs and archives. pod install re-fetches as needed."
+    "description": "Downloaded pod specs and archives. pod install re-fetches as needed.",
+    "icon": "hammer"
   },
   {
     "id": "dev_npm_pnpm_yarn_caches",
@@ -406,7 +463,8 @@
     ],
     "risk": "moderate",
     "group": "dev",
-    "description": "Package manager global caches. Next install re-downloads packages."
+    "description": "Package manager global caches. Next install re-downloads packages.",
+    "icon": "shippingbox"
   },
   {
     "id": "dev_pip_cache",
@@ -417,24 +475,31 @@
     ],
     "risk": "moderate",
     "group": "dev",
-    "description": "Python pip download cache. Rebuilt on the next pip install."
+    "description": "Python pip download cache. Rebuilt on the next pip install.",
+    "icon": "chevron.left.forwardslash.chevron.right"
   },
   {
     "id": "homebrew_caches",
     "label": "Homebrew caches",
-    "paths": ["~/Library/Caches/Homebrew"],
+    "paths": [
+      "~/Library/Caches/Homebrew"
+    ],
     "risk": "moderate",
     "group": "dev",
-    "description": "Downloaded bottle and source caches. Homebrew re-downloads packages when needed."
+    "description": "Downloaded bottle and source caches. Homebrew re-downloads packages when needed.",
+    "icon": "mug"
   },
   {
     "id": "homebrew_cleanup",
     "label": "Homebrew cleanup",
-    "paths": ["~/Library/Caches/Homebrew"],
+    "paths": [
+      "~/Library/Caches/Homebrew"
+    ],
     "risk": "manual",
     "group": "dev",
     "guide_command": "brew cleanup -s",
-    "description": "Removes old formula versions and scrubbed caches. Run the command in Terminal — MacSweeper does not execute brew. Size is not estimated here; use Homebrew caches above to Trash downloads."
+    "description": "Removes old formula versions and scrubbed caches. Run the command in Terminal \u2014 MacSweeper does not execute brew. Size is not estimated here; use Homebrew caches above to Trash downloads.",
+    "icon": "mug"
   },
   {
     "id": "docker_reclaim",
@@ -446,7 +511,8 @@
     "risk": "manual",
     "group": "dev",
     "guide_command": "docker system prune -a",
-    "description": "Docker Desktop data. Most reclaimable space lives in the VM disk — use docker system prune. MacSweeper does not run Docker commands."
+    "description": "Docker Desktop data. Most reclaimable space lives in the VM disk \u2014 use docker system prune. MacSweeper does not run Docker commands.",
+    "icon": "shippingbox"
   },
   {
     "id": "dev_playwright_cypress",
@@ -460,7 +526,8 @@
     ],
     "risk": "moderate",
     "group": "dev",
-    "description": "Browser binaries and caches for Playwright, Cypress, and Puppeteer. Next test run re-downloads what’s needed."
+    "description": "Browser binaries and caches for Playwright, Cypress, and Puppeteer. Next test run re-downloads what\u2019s needed.",
+    "icon": "shippingbox"
   },
   {
     "id": "dev_go_caches",
@@ -471,15 +538,19 @@
     ],
     "risk": "moderate",
     "group": "dev",
-    "description": "Go compiler build cache. Next go build regenerates it. Module downloads under GOPATH/pkg are not included."
+    "description": "Go compiler build cache. Next go build regenerates it. Module downloads under GOPATH/pkg are not included.",
+    "icon": "hammer"
   },
   {
     "id": "dev_maven_cache",
     "label": "Maven cache",
-    "paths": ["~/.m2/repository"],
+    "paths": [
+      "~/.m2/repository"
+    ],
     "risk": "moderate",
     "group": "dev",
-    "description": "Local Maven artifact repository. Next build re-downloads dependencies."
+    "description": "Local Maven artifact repository. Next build re-downloads dependencies.",
+    "icon": "hammer"
   },
   {
     "id": "dev_bun_cache",
@@ -490,15 +561,19 @@
     ],
     "risk": "moderate",
     "group": "dev",
-    "description": "Bun package install cache. Next bun install re-fetches packages."
+    "description": "Bun package install cache. Next bun install re-fetches packages.",
+    "icon": "shippingbox"
   },
   {
     "id": "dev_carthage_cache",
     "label": "Carthage cache",
-    "paths": ["~/Library/Caches/org.carthage.CarthageKit"],
+    "paths": [
+      "~/Library/Caches/org.carthage.CarthageKit"
+    ],
     "risk": "moderate",
     "group": "dev",
-    "description": "Carthage downloaded frameworks cache. carthage bootstrap re-fetches as needed."
+    "description": "Carthage downloaded frameworks cache. carthage bootstrap re-fetches as needed.",
+    "icon": "hammer"
   },
   {
     "id": "dev_bundler_cache",
@@ -510,15 +585,19 @@
     ],
     "risk": "moderate",
     "group": "dev",
-    "description": "Ruby gem download caches. bundle install / gem install re-fetches as needed."
+    "description": "Ruby gem download caches. bundle install / gem install re-fetches as needed.",
+    "icon": "chevron.left.forwardslash.chevron.right"
   },
   {
     "id": "simulator_unavailable_cleanup",
     "label": "Unavailable simulators",
-    "paths": ["~/Library/Developer/CoreSimulator"],
+    "paths": [
+      "~/Library/Developer/CoreSimulator"
+    ],
     "risk": "manual",
     "group": "dev",
     "guide_command": "xcrun simctl delete unavailable",
-    "description": "Removes simulator runtimes and devices that are no longer available. Run in Terminal — MacSweeper does not execute simctl. Review carefully if you keep old device data."
+    "description": "Removes simulator runtimes and devices that are no longer available. Run in Terminal \u2014 MacSweeper does not execute simctl. Review carefully if you keep old device data.",
+    "icon": "shippingbox"
   }
 ]

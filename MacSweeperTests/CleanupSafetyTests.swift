@@ -1,5 +1,47 @@
+import Darwin
 import XCTest
 @testable import MacSweeper
+
+final class PathSafetyPolicyTests: XCTestCase {
+    private let home = "/Users/testuser"
+
+    func testDiscoverySkipsLibraryButAllowsDocumentsGitHub() {
+        XCTAssertTrue(
+            PathSafetyPolicy.isProtectedDiscoveryPath(
+                home + "/Library/Caches",
+                homeDirectory: home
+            )
+        )
+        XCTAssertFalse(
+            PathSafetyPolicy.isProtectedDiscoveryPath(
+                home + "/Documents/GitHub/app",
+                homeDirectory: home
+            )
+        )
+        XCTAssertTrue(
+            PathSafetyPolicy.isProtectedDiscoveryPath(
+                home + "/Documents/Other",
+                homeDirectory: home
+            )
+        )
+    }
+
+    func testTrashAndDiscoveryShareUserContentRoots() {
+        for root in ["Documents", "Pictures", "Music", "Movies"] {
+            XCTAssertTrue(
+                PathSafetyPolicy.discoverySkipPrefixes.contains(root),
+                "discovery should skip \(root)"
+            )
+            XCTAssertTrue(
+                PathSafetyPolicy.trashProtectedPrefixes.contains(root),
+                "trash should protect \(root)"
+            )
+        }
+        // Desktop is walkable for Dev discovery but still trash-protected.
+        XCTAssertFalse(PathSafetyPolicy.discoverySkipPrefixes.contains("Desktop"))
+        XCTAssertTrue(PathSafetyPolicy.trashProtectedPrefixes.contains("Desktop"))
+    }
+}
 
 final class CleanupAllowlistTests: XCTestCase {
     private var home: String!
@@ -388,6 +430,26 @@ final class DiskMeasurementCancellationTests: XCTestCase {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
+    }
+
+    func testAPFSCloneCountedOnceWithinWalk() throws {
+        let original = tempRoot.appendingPathComponent("original.bin")
+        let clone = tempRoot.appendingPathComponent("clone.bin")
+        let payload = Data(repeating: 0xAB, count: 1_048_576)
+        try payload.write(to: original)
+
+        let cloneResult = clonefile(original.path, clone.path, 0)
+        try XCTSkipIf(cloneResult != 0, "clonefile unavailable or failed (errno \(errno))")
+
+        var deduper = DiskMeasurement.Deduper()
+        let total = try DiskMeasurement.measureAllocatedSize(
+            at: tempRoot,
+            deduper: &deduper
+        )
+        // Shared clone stream should not double-count ~1 MB allocated twice.
+        XCTAssertLessThan(total, Int64(payload.count) * 2)
+        XCTAssertGreaterThan(total, 0)
+        XCTAssertFalse(deduper.seenCloneIDs.isEmpty, "Expected at least one APFS clone ID")
     }
 }
 

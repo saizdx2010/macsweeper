@@ -73,7 +73,7 @@ final class UXPolishTests: XCTestCase {
         XCTAssertFalse(CleanConfirmPolicy.requiresConfirmation(results: [safe]))
     }
 
-    func testConfirmNotRequiredForModerateOnly() {
+    func testConfirmNotRequiredForSmallModerateOnly() {
         let moderate = ScanResult(
             category: ScanCategory(
                 id: "old_downloads",
@@ -87,6 +87,64 @@ final class UXPolishTests: XCTestCase {
             isSelected: true
         )
         XCTAssertFalse(CleanConfirmPolicy.requiresConfirmation(results: [moderate]))
+    }
+
+    func testConfirmRequiredForLargeModerate() {
+        let moderate = ScanResult(
+            category: ScanCategory(
+                id: "old_downloads",
+                label: "Downloads",
+                paths: ["~/Downloads"],
+                risk: .moderate,
+                description: "test",
+                scan: .listChildren
+            ),
+            paths: [
+                ScannedPath(
+                    path: "/Users/me/Downloads/big.dmg",
+                    byteCount: CleanConfirmPolicy.moderateByteThreshold,
+                    isSelected: true
+                )
+            ],
+            isSelected: true
+        )
+        XCTAssertTrue(CleanConfirmPolicy.requiresConfirmation(results: [moderate]))
+        XCTAssertEqual(
+            CleanConfirmPolicy.confirmationReason(results: [moderate]),
+            .largeModerate(bytes: CleanConfirmPolicy.moderateByteThreshold)
+        )
+    }
+
+    func testDetailFiltersMatchAgeAndSize() {
+        let old = ScannedPath(
+            path: "/Users/me/Downloads/old.zip",
+            byteCount: 200_000_000,
+            isSelected: true,
+            contentModificationDate: Date().addingTimeInterval(-40 * 24 * 60 * 60)
+        )
+        XCTAssertTrue(DetailPathQuery.matchesFilters(old, age: .older30, size: .over100MB))
+        XCTAssertFalse(DetailPathQuery.matchesFilters(old, age: .older90, size: .any))
+        XCTAssertFalse(DetailPathQuery.matchesFilters(old, age: .any, size: .over1GB))
+    }
+
+    func testCategoryIconPrefersJSONField() {
+        let withIcon = ScanCategory(
+            id: "custom",
+            label: "Custom",
+            paths: [],
+            risk: .safe,
+            description: "test",
+            icon: "globe"
+        )
+        XCTAssertEqual(withIcon.sfSymbolName, "globe")
+        let without = ScanCategory(
+            id: "custom",
+            label: "Custom",
+            paths: [],
+            risk: .safe,
+            description: "test"
+        )
+        XCTAssertEqual(without.sfSymbolName, "folder")
     }
 
     // MARK: - CategoryLabelResolver

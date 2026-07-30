@@ -136,6 +136,9 @@ struct CleanFlowView: View {
         if includesEmptyTrash {
             return "Clean \(sizeLabel)? Some items are permanent."
         }
+        if case .largeModerate = CleanConfirmPolicy.confirmationReason(results: results) {
+            return "Move \(sizeLabel) to Trash? Includes large Moderate items."
+        }
         return "Move \(sizeLabel) to Trash?"
     }
 
@@ -156,6 +159,10 @@ struct CleanFlowView: View {
         }
         if includesEmptyTrash {
             return "\(results.count) \(categoryWord) · \(totalItems) \(itemWord). Empty Trash cannot be undone; other items move to Trash."
+        }
+        if case .largeModerate(let bytes) = CleanConfirmPolicy.confirmationReason(results: results) {
+            let moderateLabel = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+            return "\(results.count) \(categoryWord) · \(totalItems) \(itemWord), including \(moderateLabel) Moderate-risk. These may need re-download or re-login."
         }
         return "\(results.count) \(categoryWord) · \(totalItems) \(itemWord). Items move to Trash and can be restored anytime."
     }
@@ -239,6 +246,9 @@ struct CleanFlowView: View {
         }
         if includesEmptyTrash {
             return "Selected items move to Trash except Empty Trash, which permanently deletes."
+        }
+        if case .largeModerate = CleanConfirmPolicy.confirmationReason(results: results) {
+            return "Large Moderate selection — review carefully. Items still move to Trash and can be restored."
         }
         return "Items move to Trash. You can restore them from Trash anytime."
     }

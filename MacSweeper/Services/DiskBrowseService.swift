@@ -45,8 +45,8 @@ final class DiskBrowseService: ObservableObject {
     private var measureTask: Task<Void, Never>?
     /// Bumped on each load/cancel so a finishing task cannot clobber a newer one.
     private var measureGeneration = 0
-    /// Hard-link dedupe shared across the current directory’s child measurements.
-    private var seenHardLinks = Set<FileIdentity>()
+    /// Hard-link + APFS clone dedupe shared across the current directory’s child measurements.
+    private var storageDeduper = DiskMeasurement.Deduper()
 
     init(rootPath: String? = nil, fileManager: FileManager = .default) {
         self.fileManager = fileManager
@@ -96,7 +96,7 @@ final class DiskBrowseService: ObservableObject {
         entries = []
         errorMessage = nil
         measuredCount = 0
-        seenHardLinks = []
+        storageDeduper = DiskMeasurement.Deduper()
         startProgressiveMeasure()
     }
 
@@ -165,20 +165,20 @@ final class DiskBrowseService: ObservableObject {
                 entries = listed
                 measuredCount = 0
 
-                var localSeen = seenHardLinks
+                var localDeduper = storageDeduper
                 for index in listed.indices {
                     try Task.checkCancellation()
                     guard generation == measureGeneration else { return }
                     let entry = listed[index]
-                    let (bytes, updatedSeen) = try await Self.measureEntry(
+                    let (bytes, updatedDeduper) = try await Self.measureEntry(
                         entry,
                         fileManager: fm,
-                        seenHardLinks: localSeen
+                        deduper: localDeduper
                     )
-                    localSeen = updatedSeen
+                    localDeduper = updatedDeduper
                     guard generation == measureGeneration, !Task.isCancelled else {
                         if generation == measureGeneration {
-                            seenHardLinks = localSeen
+                            storageDeduper = localDeduper
                         }
                         return
                     }
@@ -188,7 +188,7 @@ final class DiskBrowseService: ObservableObject {
                     }
                 }
                 guard generation == measureGeneration else { return }
-                seenHardLinks = localSeen
+                storageDeduper = localDeduper
 
                 entries.sort { lhs, rhs in
                     let lb = lhs.byteCount ?? -1
@@ -249,20 +249,20 @@ final class DiskBrowseService: ObservableObject {
         }
     }
 
-    /// Measures one entry off the main actor; returns updated hard-link dedupe set.
+    /// Measures one entry off the main actor; returns updated storage dedupe state.
     nonisolated private static func measureEntry(
         _ entry: DiskBrowseEntry,
         fileManager: FileManager,
-        seenHardLinks: Set<FileIdentity>
-    ) async throws -> (Int64, Set<FileIdentity>) {
-        var seen = seenHardLinks
+        deduper: DiskMeasurement.Deduper
+    ) async throws -> (Int64, DiskMeasurement.Deduper) {
+        var local = deduper
         let url = URL(fileURLWithPath: entry.path, isDirectory: entry.isDirectory)
         let bytes = try DiskMeasurement.measureAllocatedSize(
             at: url,
             fileManager: fileManager,
-            seenHardLinks: &seen
+            deduper: &local
         )
-        return (bytes, seen)
+        return (bytes, local)
     }
 
     private static func clampToHome(_ path: String, home: String) -> String {
