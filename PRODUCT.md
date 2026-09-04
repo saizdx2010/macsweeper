@@ -22,7 +22,7 @@ No feature bloat. No scare tactics. Free forever — no subscription, no tip jar
 - "RAM cleaner" or fake optimization
 - System `/private/var` deep cleaning
 - Launch agents / login items management
-- Orphaned app / leftover preference sweeping (deferred to Phase 10)
+- Orphaned app / leftover preference sweeping (shipped in v1.1.0)
 
 ## MVP Features
 
@@ -245,7 +245,7 @@ Rules live in JSON, not hardcoded Swift:
 
 Start with ~15–20 high-value, low-risk rules. Expand over time.
 
-**Size reporting (v1):** Use allocated size via `FileManager` / `URLResourceValues` (naive walk). APFS clone / sparse accuracy is Phase 11; hard-link dedupe is already applied. Label sizes as approximate if needed.
+**Size reporting (v1):** Allocated size via `FileManager` / `URLResourceValues`, with hard-link and APFS clone dedupe applied within and across categories; sparse files report allocated bytes. Sizes are labeled approximate — the clean result cross-checks the volume's actual free-space gain.
 
 **Concurrency:** Scan on a background queue; stream category results to the UI; support cancel.
 
@@ -302,7 +302,7 @@ In-app copy: *"We need this to empty Trash. Files never leave your Mac."*
 | **8** | Ship & sustain: notarized `.app`, safety tests (free forever) | Done |
 | **9** | Broader regenerable cache / Manual rules (Brave, JetBrains, messaging, Playwright, etc.) | Done |
 | **10** | Orphaned-app leftovers (prefs / Application Support for uninstalled apps) | Planned |
-| **11** | APFS-aware sizing + large-list Detail UX (virtualized / show-more / search) | Partial — Detail search / show-more / filters shipped; APFS sizing remains |
+| **11** | APFS-aware sizing + large-list Detail UX (virtualized / show-more / search) | Shipped — Detail search / show-more / filters plus clone/sparse/hard-link-aware sizing with cross-category dedupe and a free-space cross-check |
 
 ### High-ROI priorities (post Phase 4)
 
@@ -322,7 +322,7 @@ Chosen first track: **broader cache rules** (cheap JSON wins, same Safe/Moderate
 |-------|--------|-------|
 | **9** | Grow `cleanup-rules.json` toward mac-cleanup-go coverage | Brave/Opera, JetBrains, Telegram/WhatsApp/Teams, Steam, watchOS/tvOS DeviceSupport, Playwright/Cypress/Puppeteer, Go/Maven/Bun/Carthage/Bundler caches; Manual `xcrun simctl delete unavailable`. Still Trash-first; no shell-out. |
 | **10** | Orphaned-app leftover sweeping (Mole-inspired) | Prefs / Application Support / caches for apps no longer in `/Applications` or `~/Applications`. Risk **Moderate/Risky**, unchecked. Keep hard exclusions (Documents, profiles, keychains). Never default-on Safe. |
-| **11** | APFS-aware sizing + large-list Detail UX | **Large-list Detail UX shipped** (search, show more, broader age/size filters, Reveal in Finder) along with Results/Browse/Clean polish. **APFS clone/sparse sizing still planned** so totals match Finder more closely. |
+| **11** | APFS-aware sizing + large-list Detail UX | **Shipped.** Large-list Detail UX (search, show more, broader age/size filters, Reveal in Finder) and APFS-aware sizing: clone/sparse/hard-link handling, cross-category dedupe, approximate labels, and a post-clean "Finder now shows +X" free-space check. |
 
 **Secondary (after 9–11, packaging polish):** cleanup report export (CSV/Markdown), opt-in reclaim reminders (not menu-bar monitoring), Sparkle self-update for the notarized `.app`, accessibility/localization, CI notarization.
 
@@ -369,7 +369,7 @@ Chosen first track: **broader cache rules** (cheap JSON wins, same Safe/Moderate
 
 **Phase 9 decisions:**
 
-- First post-ship track is **rules expansion**, not orphans or APFS yet.
+- First post-ship tracks shipped: orphans (v1.1.0) and APFS sizing (v1.2.0); ongoing track is **rules expansion**.
 - Add Safe regenerable caches: Brave, Opera, JetBrains, messaging (Telegram / WhatsApp / Teams), Steam; expand Electron list (Linear, Obsidian, Loom, Miro); watchOS/tvOS DeviceSupport.
 - Add Dev Moderate caches: Playwright/Cypress/Puppeteer, Go build cache, Maven, Bun, Carthage, Bundler/RubyGems.
 - Add Manual guide: `xcrun simctl delete unavailable` (copy only; no shell-out).

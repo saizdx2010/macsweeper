@@ -2,7 +2,7 @@
 
 Where MacSweeper goes next — version by version. For the full product spec (vision, safety model, architecture), see [PRODUCT.md](PRODUCT.md). For build/test/release instructions, see [README.md](README.md).
 
-- **Current release:** v1.1.0 (`MARKETING_VERSION` in [project.yml](project.yml))
+- **Current release:** v1.2.0 (`MARKETING_VERSION` in [project.yml](project.yml))
 - **Last updated:** 2026-09-04
 - **Ordering, not dates:** releases are ordered by priority; no calendar promises.
 
@@ -87,15 +87,15 @@ The complete scan → preview → clean loop, shipped and notarized:
 - ✅ "Why is this here?" copy explains the orphan heuristic and what won't be listed
 - ✅ Safety tests: orphan rules never match an installed app's bundle or protected prefixes
 
-## 📅 v1.2.0 — APFS-aware sizing (Phase 11 completion)
+## ✅ v1.2.0 — APFS-aware sizing (Phase 11 completion)
 
 **Goal:** make reported sizes match Finder closely enough that "Freed X GB" is never doubted. The only unfinished item from Phase 11.
 
-- [ ] Use APFS logical vs. allocated size correctly (`NSURLTotalFileAllocatedSizeKey` vs. logical) — clones and sparse files undercount/overcount today
-- [ ] Hard-link dedupe already applied within a walk — extend across categories so the same inode isn't counted twice
-- [ ] Validate a sample of directories against Finder "Get Info" + `du`; document known deltas in the size label ("approximate")
-- [ ] Re-measure free-space delta after clean and show it on the done screen ("Finder now shows +2.6 GB")
-- [ ] Unit tests with fixture files (clone, sparse, hard-linked) where the filesystem supports it
+- ✅ Use APFS logical vs. allocated size correctly (`NSURLTotalFileAllocatedSizeKey` vs. logical) — clones and sparse files undercount/overcount today
+- ✅ Hard-link dedupe already applied within a walk — extend across categories so the same inode isn't counted twice
+- ✅ Validate a sample of directories against Finder "Get Info" + `du`; document known deltas in the size label ("approximate")
+- ✅ Re-measure free-space delta after clean and show it on the done screen ("Finder now shows +2.6 GB")
+- ✅ Unit tests with fixture files (clone, sparse, hard-linked) where the filesystem supports it
 
 ## 📅 v1.3.0 — Trust pack: report export + ignore list
 

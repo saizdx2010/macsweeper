@@ -46,7 +46,7 @@ Phases **1–9** shipped: scan → preview → Trash-safe clean, Dev mode, selec
 
 **UX polish** (post Phase 9): Reveal in Finder, bulk Safe selection, Detail search/show-more, Clean progress, Browse breadcrumbs/keys, history labels, shortcuts/a11y.
 
-Phase **10** planned (orphaned-app leftovers). Phase **11** partially shipped (Detail large-list UX); APFS sizing remains. See [ROADMAP.md](ROADMAP.md) for the version-by-version plan and [PRODUCT.md](PRODUCT.md) for the full spec.
+Phase **10** shipped: orphaned-app leftovers, grouped per app in Detail. Phase **11** shipped: APFS-aware sizing (clone/sparse/hard-link dedupe across categories) with a post-clean "Finder now shows +X" free-space check. See [ROADMAP.md](ROADMAP.md) for the version-by-version plan and [PRODUCT.md](PRODUCT.md) for the full spec.
 
 ## Requirements
 
