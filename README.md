@@ -2,7 +2,7 @@
 
 A lightweight, native macOS disk cleaner. Scan, preview, and reclaim space safely — no subscriptions, no scare tactics, free forever.
 
-Inspired by [ncdu](https://dev.yorhel.nl/ncdu) and [mac-cleanup-go](https://github.com/2ykwang/mac-cleanup-go). Full product spec: [PRODUCT.md](PRODUCT.md).
+Inspired by [ncdu](https://dev.yorhel.nl/ncdu) and [mac-cleanup-go](https://github.com/2ykwang/mac-cleanup-go). Full product spec: [PRODUCT.md](PRODUCT.md). What's next: [ROADMAP.md](ROADMAP.md).
 
 ## What it is
 
@@ -46,7 +46,7 @@ Phases **1–9** shipped: scan → preview → Trash-safe clean, Dev mode, selec
 
 **UX polish** (post Phase 9): Reveal in Finder, bulk Safe selection, Detail search/show-more, Clean progress, Browse breadcrumbs/keys, history labels, shortcuts/a11y.
 
-Phase **10** planned (orphaned-app leftovers). Phase **11** partially shipped (Detail large-list UX); APFS sizing remains. Details in [PRODUCT.md](PRODUCT.md).
+Phase **10** planned (orphaned-app leftovers). Phase **11** partially shipped (Detail large-list UX); APFS sizing remains. See [ROADMAP.md](ROADMAP.md) for the version-by-version plan and [PRODUCT.md](PRODUCT.md) for the full spec.
 
 ## Requirements
 
