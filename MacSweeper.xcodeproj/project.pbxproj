@@ -28,6 +28,7 @@
 		784E11476CD88E8E4C4B12F0 /* DiskRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72DD82245B6A9DDAD0DFBD87 /* DiskRingView.swift */; };
 		7BA6EFDAB614E1468BC45EDF /* CleanConfirmPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D270DE2DE5E185E296565D32 /* CleanConfirmPolicy.swift */; };
 		7D4DDD4FFCF5586B020279A4 /* CategoryCardRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18B36962518B369841DDF36 /* CategoryCardRow.swift */; };
+		7DF05892B0895B8D01C8DD9D /* DiskSizingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D69BF236BFF8E84657B26DC /* DiskSizingTests.swift */; };
 		8B1CA678A0A7A1B1FD2A2F92 /* CleanFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42701C072F2FCC237BBE4588 /* CleanFlowView.swift */; };
 		8FA57A142DAC66B8D3CA90B0 /* ScanCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803C24AB453B82AEAE0D8127 /* ScanCategory.swift */; };
 		94338B00493093CB987865B7 /* UnusedAppsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0782F296EF521F7AF1B344A5 /* UnusedAppsTests.swift */; };
@@ -69,6 +70,7 @@
 		0C8E3FE949431A2E7D24D582 /* FinderReveal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderReveal.swift; sourceTree = "<group>"; };
 		109DCE58B3C47D4C25D3605A /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		130BEDC5315FFCE5F30C5530 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1D69BF236BFF8E84657B26DC /* DiskSizingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskSizingTests.swift; sourceTree = "<group>"; };
 		22FE54B1BAE4E12DD6D53D25 /* ScanResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanResultsView.swift; sourceTree = "<group>"; };
 		271A0897AA42C150138B9D00 /* DiskMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskMeasurement.swift; sourceTree = "<group>"; };
 		28AE6771F2AEF6963BD346FF /* OrphanedAppLeftoverScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrphanedAppLeftoverScanner.swift; sourceTree = "<group>"; };
@@ -175,6 +177,7 @@
 			isa = PBXGroup;
 			children = (
 				B3A3DD5F8A5483484DC0C025 /* CleanupSafetyTests.swift */,
+				1D69BF236BFF8E84657B26DC /* DiskSizingTests.swift */,
 				F3B5A92DAC24824124CDA986 /* OrphanedLeftoversTests.swift */,
 				0782F296EF521F7AF1B344A5 /* UnusedAppsTests.swift */,
 				4B9533BADF66B59E75B93583 /* UXPolishTests.swift */,
@@ -378,6 +381,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				34DAD9DEFEEC36801610EE55 /* CleanupSafetyTests.swift in Sources */,
+				7DF05892B0895B8D01C8DD9D /* DiskSizingTests.swift in Sources */,
 				A6EBF796CF85E1D54D288D52 /* OrphanedLeftoversTests.swift in Sources */,
 				180B6D765157ED9108CFA994 /* UXPolishTests.swift in Sources */,
 				94338B00493093CB987865B7 /* UnusedAppsTests.swift in Sources */,

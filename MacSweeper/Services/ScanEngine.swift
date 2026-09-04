@@ -83,10 +83,18 @@ actor ScanEngine {
 
         var foundCount = 0
         let total = categories.count
+        // Shared across categories so the same hard link / APFS clone is never
+        // counted twice anywhere in one scan — reported totals stay close to
+        // what Finder will actually show after a clean.
+        var deduper = DiskMeasurement.Deduper()
         for (index, category) in categories.enumerated() {
             try Task.checkCancellation()
 
-            let result = try measureCategory(category, extraDevRoots: extraDevRoots)
+            let result = try measureCategory(
+                category,
+                extraDevRoots: extraDevRoots,
+                deduper: &deduper
+            )
             if let result {
                 foundCount += 1
                 continuation.yield(.category(result))
@@ -100,30 +108,31 @@ actor ScanEngine {
 
     private func measureCategory(
         _ category: ScanCategory,
-        extraDevRoots: [String]
+        extraDevRoots: [String],
+        deduper: inout DiskMeasurement.Deduper
     ) throws -> ScanResult? {
         if category.action == .emptyTrash {
-            return try measureEmptyTrash(category)
+            return try measureEmptyTrash(category, deduper: &deduper)
         }
 
         if category.scan == .findNamedDirs {
-            return try measureFindNamedDirs(category, extraDevRoots: extraDevRoots)
+            return try measureFindNamedDirs(category, extraDevRoots: extraDevRoots, deduper: &deduper)
         }
 
         if category.scan == .listChildren {
-            return try measureListChildren(category)
+            return try measureListChildren(category, deduper: &deduper)
         }
 
         if category.scan == .unusedApps {
             return try UnusedAppScanner.measure(
                 category: category,
                 fileManager: fileManager,
-                homeDirectory: homeDirectory
+                homeDirectory: homeDirectory,
+                deduper: &deduper
             )
         }
 
         if category.scan == .orphanedLeftovers {
-            var deduper = DiskMeasurement.Deduper()
             return try OrphanedAppLeftoverScanner.measure(
                 category: category,
                 fileManager: fileManager,
@@ -134,10 +143,10 @@ actor ScanEngine {
 
         // Manual guidance: show when a marker path exists, even at 0 measured bytes.
         if category.risk == .manual, category.guideCommand != nil {
-            return try measureManualGuide(category)
+            return try measureManualGuide(category, deduper: &deduper)
         }
 
-        return try measureFixedPaths(category)
+        return try measureFixedPaths(category, deduper: &deduper)
     }
 
     private func makeScannedPath(
@@ -161,9 +170,11 @@ actor ScanEngine {
         return values?.contentModificationDate
     }
 
-    private func measureFixedPaths(_ category: ScanCategory) throws -> ScanResult? {
+    private func measureFixedPaths(
+        _ category: ScanCategory,
+        deduper: inout DiskMeasurement.Deduper
+    ) throws -> ScanResult? {
         var scannedPaths: [ScannedPath] = []
-        var deduper = DiskMeasurement.Deduper()
 
         for pathString in category.paths {
             try Task.checkCancellation()
@@ -249,9 +260,11 @@ actor ScanEngine {
     }
 
     /// Manual + guide: appear when any configured path exists (size optional).
-    private func measureManualGuide(_ category: ScanCategory) throws -> ScanResult? {
+    private func measureManualGuide(
+        _ category: ScanCategory,
+        deduper: inout DiskMeasurement.Deduper
+    ) throws -> ScanResult? {
         var scannedPaths: [ScannedPath] = []
-        var deduper = DiskMeasurement.Deduper()
         var anyExists = false
 
         for pathString in category.paths {
@@ -290,20 +303,28 @@ actor ScanEngine {
     }
 
     /// Lists top-level Trash entries so item counts match what Empty Trash deletes.
-    private func measureEmptyTrash(_ category: ScanCategory) throws -> ScanResult? {
+    private func measureEmptyTrash(
+        _ category: ScanCategory,
+        deduper: inout DiskMeasurement.Deduper
+    ) throws -> ScanResult? {
         try measureListedChildren(
             category,
             directoryOptions: [],
-            isSelected: category.risk.isSelectedByDefault
+            isSelected: category.risk.isSelectedByDefault,
+            deduper: &deduper
         )
     }
 
     /// Lists immediate children of configured folders (Downloads, Mail downloads, etc.).
-    private func measureListChildren(_ category: ScanCategory) throws -> ScanResult? {
+    private func measureListChildren(
+        _ category: ScanCategory,
+        deduper: inout DiskMeasurement.Deduper
+    ) throws -> ScanResult? {
         try measureListedChildren(
             category,
             directoryOptions: [.skipsHiddenFiles],
-            isSelected: category.risk.isSelectedByDefault
+            isSelected: category.risk.isSelectedByDefault,
+            deduper: &deduper
         )
     }
 
@@ -311,10 +332,10 @@ actor ScanEngine {
     private func measureListedChildren(
         _ category: ScanCategory,
         directoryOptions: FileManager.DirectoryEnumerationOptions,
-        isSelected: Bool
+        isSelected: Bool,
+        deduper: inout DiskMeasurement.Deduper
     ) throws -> ScanResult? {
         var scannedPaths: [ScannedPath] = []
-        var deduper = DiskMeasurement.Deduper()
 
         for pathString in category.paths {
             try Task.checkCancellation()
@@ -379,7 +400,8 @@ actor ScanEngine {
 
     private func measureFindNamedDirs(
         _ category: ScanCategory,
-        extraDevRoots: [String]
+        extraDevRoots: [String],
+        deduper: inout DiskMeasurement.Deduper
     ) throws -> ScanResult? {
         let names = Set(category.findNames ?? [])
         guard !names.isEmpty else { return nil }
@@ -418,7 +440,6 @@ actor ScanEngine {
         guard !foundURLs.isEmpty else { return nil }
 
         var scannedPaths: [ScannedPath] = []
-        var deduper = DiskMeasurement.Deduper()
         let selected = category.risk.isSelectedByDefault
 
         for url in foundURLs {

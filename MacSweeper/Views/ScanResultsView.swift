@@ -187,6 +187,9 @@ struct ScanResultsView: View {
                     Text(ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file))
                         .font(.system(size: 28, weight: .semibold, design: .rounded))
                         .monospacedDigit()
+                    Text("approximate · shared files counted once")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {

@@ -45,13 +45,13 @@ enum UnusedAppScanner {
         homeDirectory: String,
         now: Date = Date(),
         runningBundlePaths: Set<String>? = nil,
-        lastUsedDateProvider: (URL) -> Date? = { lastUsedDate(at: $0) }
+        lastUsedDateProvider: (URL) -> Date? = { lastUsedDate(at: $0) },
+        deduper: inout DiskMeasurement.Deduper
     ) throws -> ScanResult? {
         let minAgeDays = max(category.minAgeDays ?? 30, 1)
         let running = runningBundlePaths ?? currentRunningBundlePaths()
 
         var scannedPaths: [ScannedPath] = []
-        var deduper = DiskMeasurement.Deduper()
 
         for pathString in category.paths {
             try Task.checkCancellation()

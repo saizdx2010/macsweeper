@@ -190,13 +190,15 @@ final class UnusedAppScannerTests: XCTestCase {
             creationDate: now.addingTimeInterval(-30 * 24 * 60 * 60)
         )
 
+        var deduper = DiskMeasurement.Deduper()
         let result = try UnusedAppScanner.measure(
             category: makeCategory(),
             fileManager: .default,
             homeDirectory: tempRoot.path,
             now: now,
             runningBundlePaths: [tempRoot.appendingPathComponent("Applications/Older.app").path],
-            lastUsedDateProvider: { UnusedAppScanner.creationFallbackDate(at: $0) }
+            lastUsedDateProvider: { UnusedAppScanner.creationFallbackDate(at: $0) },
+            deduper: &deduper
         )
 
         // FileManager canonicalizes returned URLs (e.g. /var → /private/var),
@@ -224,13 +226,15 @@ final class UnusedAppScannerTests: XCTestCase {
             withIntermediateDirectories: true
         )
 
+        var deduper = DiskMeasurement.Deduper()
         let result = try UnusedAppScanner.measure(
             category: makeCategory(),
             fileManager: .default,
             homeDirectory: tempRoot.path,
             now: now,
             runningBundlePaths: [],
-            lastUsedDateProvider: { UnusedAppScanner.creationFallbackDate(at: $0) }
+            lastUsedDateProvider: { UnusedAppScanner.creationFallbackDate(at: $0) },
+            deduper: &deduper
         )
 
         XCTAssertEqual(result?.paths.compactMap(\.path).count, 1)
@@ -247,12 +251,14 @@ final class UnusedAppScannerTests: XCTestCase {
             scan: .unusedApps,
             minAgeDays: 14
         )
+        var deduper = DiskMeasurement.Deduper()
         let result = try UnusedAppScanner.measure(
             category: category,
             fileManager: .default,
             homeDirectory: "/Users/definitely-missing-home-\(UUID().uuidString)",
             now: Date(),
-            runningBundlePaths: []
+            runningBundlePaths: [],
+            deduper: &deduper
         )
         XCTAssertNil(result)
     }
