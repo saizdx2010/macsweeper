@@ -125,6 +125,22 @@ enum RuleCoverage {
                         risk: category.risk
                     )
                 }
+
+            case .unusedApps:
+                // Match a top-level .app under any configured Applications root
+                // (and anything inside that bundle).
+                for rulePath in category.paths {
+                    let root = expandHome(rulePath, home: homeDirectory)
+                    guard standardized.hasPrefix(root + "/") else { continue }
+                    let inner = String(standardized.dropFirst(root.count + 1))
+                    let components = inner.split(separator: "/")
+                    guard let first = components.first, first.hasSuffix(".app") else { continue }
+                    return RuleCoverageMatch(
+                        categoryID: category.id,
+                        label: category.label,
+                        risk: category.risk
+                    )
+                }
             }
         }
         return nil

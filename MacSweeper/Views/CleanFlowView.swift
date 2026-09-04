@@ -6,6 +6,7 @@ struct CleanFlowView: View {
     @Binding var navigationPath: NavigationPath
 
     @EnvironmentObject private var auditLog: AuditLogService
+    @EnvironmentObject private var settings: AppSettings
 
     @State private var phase: Phase = .confirm
     @State private var outcome: CleanupService.Outcome?
@@ -37,6 +38,12 @@ struct CleanFlowView: View {
 
     private var includesMoveToTrash: Bool {
         results.contains { $0.category.action != .emptyTrash }
+    }
+
+    /// When the user opted into immediate deletion, cleaned items are permanently
+    /// removed right after the move instead of resting in Trash for undo.
+    private var deletesPermanently: Bool {
+        settings.deleteImmediately
     }
 
     private var needsExtraConfirmation: Bool {
@@ -107,16 +114,17 @@ struct CleanFlowView: View {
     }
 
     private var workingLabel: String {
+        let verb = deletesPermanently ? "Deleting" : "Moving"
         if isRestoring { return "Restoring…" }
         if let progress = cleanProgress {
             if includesEmptyTrash && progress.label.lowercased().contains("trash") {
                 return "Emptying Trash…"
             }
-            return "Moving \(progress.label)…"
+            return "\(verb) \(progress.label)…"
         }
         if includesEmptyTrash && !includesMoveToTrash { return "Emptying Trash…" }
         if includesEmptyTrash { return "Cleaning \(results.count) \(categoryWord)…" }
-        return "Moving \(results.count) \(categoryWord)…"
+        return "\(verb) \(results.count) \(categoryWord)…"
     }
 
     private var workingSubtitle: String {
@@ -137,9 +145,13 @@ struct CleanFlowView: View {
             return "Clean \(sizeLabel)? Some items are permanent."
         }
         if case .largeModerate = CleanConfirmPolicy.confirmationReason(results: results) {
-            return "Move \(sizeLabel) to Trash? Includes large Moderate items."
+            return deletesPermanently
+                ? "Permanently delete \(sizeLabel)? Includes large Moderate items."
+                : "Move \(sizeLabel) to Trash? Includes large Moderate items."
         }
-        return "Move \(sizeLabel) to Trash?"
+        return deletesPermanently
+            ? "Permanently delete \(sizeLabel)?"
+            : "Move \(sizeLabel) to Trash?"
     }
 
     private var primaryConfirmButtonTitle: String {
@@ -149,7 +161,7 @@ struct CleanFlowView: View {
         if includesEmptyTrash {
             return "Clean"
         }
-        return "Move to Trash"
+        return deletesPermanently ? "Delete" : "Move to Trash"
     }
 
     private var confirmationMessage: String {
@@ -158,13 +170,21 @@ struct CleanFlowView: View {
             return "This permanently deletes \(totalItems) \(itemWord) in Trash. It cannot be undone."
         }
         if includesEmptyTrash {
-            return "\(results.count) \(categoryWord) · \(totalItems) \(itemWord). Empty Trash cannot be undone; other items move to Trash."
+            let moveTo = deletesPermanently
+                ? "Other items are permanently deleted too."
+                : "Other items move to Trash."
+            return "\(results.count) \(categoryWord) · \(totalItems) \(itemWord). Empty Trash cannot be undone; \(moveTo)"
         }
         if case .largeModerate(let bytes) = CleanConfirmPolicy.confirmationReason(results: results) {
             let moderateLabel = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+            if deletesPermanently {
+                return "\(results.count) \(categoryWord) · \(totalItems) \(itemWord), including \(moderateLabel) Moderate-risk. They are permanently deleted and may need re-download or re-login."
+            }
             return "\(results.count) \(categoryWord) · \(totalItems) \(itemWord), including \(moderateLabel) Moderate-risk. These may need re-download or re-login."
         }
-        return "\(results.count) \(categoryWord) · \(totalItems) \(itemWord). Items move to Trash and can be restored anytime."
+        return deletesPermanently
+            ? "\(results.count) \(categoryWord) · \(totalItems) \(itemWord). Items are permanently deleted right away. This cannot be undone."
+            : "\(results.count) \(categoryWord) · \(totalItems) \(itemWord). Items move to Trash and can be restored anytime."
     }
 
     private var confirmHeadline: String {
@@ -174,7 +194,9 @@ struct CleanFlowView: View {
         if includesEmptyTrash {
             return "Clean \(results.count) \(categoryWord) · \(sizeLabel)"
         }
-        return "Move \(results.count) \(categoryWord) · \(sizeLabel) to Trash"
+        return deletesPermanently
+            ? "Permanently delete \(results.count) \(categoryWord) · \(sizeLabel)"
+            : "Move \(results.count) \(categoryWord) · \(sizeLabel) to Trash"
     }
 
     private var confirmView: some View {
@@ -245,12 +267,18 @@ struct CleanFlowView: View {
             return "Emptying Trash permanently deletes files. This cannot be undone."
         }
         if includesEmptyTrash {
-            return "Selected items move to Trash except Empty Trash, which permanently deletes."
+            return deletesPermanently
+                ? "Selected items are permanently deleted, including Empty Trash."
+                : "Selected items move to Trash except Empty Trash, which permanently deletes."
         }
         if case .largeModerate = CleanConfirmPolicy.confirmationReason(results: results) {
-            return "Large Moderate selection — review carefully. Items still move to Trash and can be restored."
+            return deletesPermanently
+                ? "Large Moderate selection — review carefully. Items are permanently deleted."
+                : "Large Moderate selection — review carefully. Items still move to Trash and can be restored."
         }
-        return "Items move to Trash. You can restore them from Trash anytime."
+        return deletesPermanently
+            ? "Items are permanently deleted right away — space is freed immediately. This cannot be undone."
+            : "Items move to Trash. You can restore them from Trash anytime."
     }
 
     private var doneView: some View {
@@ -290,6 +318,9 @@ struct CleanFlowView: View {
                 } else if outcome?.emptiedTrash == true {
                     Text("\(outcome?.itemCount ?? 0) items cleaned (including Empty Trash)")
                         .foregroundStyle(.secondary)
+                } else if outcome?.permanentlyDeleted == true {
+                    Text("\(outcome?.itemCount ?? 0) items deleted — space freed")
+                        .foregroundStyle(.secondary)
                 } else {
                     Text("\(outcome?.itemCount ?? 0) items moved to Trash")
                         .foregroundStyle(.secondary)
@@ -301,7 +332,13 @@ struct CleanFlowView: View {
                         .foregroundStyle(.orange)
                 }
 
-                if outcome?.emptiedTrash != true {
+                if outcome?.permanentlyDeleted == true && outcome?.emptiedTrash != true {
+                    Text("Items were permanently deleted, so there is nothing to undo.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 360)
+                } else if outcome?.emptiedTrash != true {
                     Text("Undo restores items still in Trash, or open Trash in Finder.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -324,7 +361,8 @@ struct CleanFlowView: View {
                         }
                     }
 
-                    if let moved = outcome?.moved, !moved.isEmpty {
+                    if let moved = outcome?.moved, !moved.isEmpty,
+                       outcome?.permanentlyDeleted != true {
                         SecondaryCTAButton(title: "Undo", expands: false) {
                             Task { await performUndo() }
                         }
@@ -370,7 +408,10 @@ struct CleanFlowView: View {
         didUndo = false
         cleanProgress = nil
         do {
-            let result = try await cleanup.moveToTrash(results) { progress in
+            let result = try await cleanup.moveToTrash(
+                results,
+                deleteImmediately: settings.deleteImmediately
+            ) { progress in
                 await MainActor.run {
                     cleanProgress = progress
                 }
@@ -417,5 +458,6 @@ struct CleanFlowView: View {
     NavigationStack {
         CleanFlowView(results: [], navigationPath: .constant(NavigationPath()))
             .environmentObject(AuditLogService())
+            .environmentObject(AppSettings())
     }
 }

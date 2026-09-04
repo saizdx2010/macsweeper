@@ -18,11 +18,14 @@ struct CategoryDetailView: View {
         result.category.scan == .listChildren
             || result.category.action == .emptyTrash
             || result.category.scan == .findNamedDirs
+            || result.category.scan == .unusedApps
     }
 
     private var showsFilters: Bool {
         result.supportsItemSelection
-            && (result.category.scan == .listChildren || result.category.scan == .findNamedDirs)
+            && (result.category.scan == .listChildren
+                || result.category.scan == .findNamedDirs
+                || result.category.scan == .unusedApps)
     }
 
     private var filteredPaths: [ScannedPath] {
@@ -404,6 +407,7 @@ struct CategoryDetailView: View {
     }
 
     private func itemIconName(for path: String) -> String {
+        if path.hasSuffix(".app") { return "app" }
         var isDirectory: ObjCBool = false
         if FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
            isDirectory.boolValue {

@@ -80,7 +80,9 @@ enum PathSafetyPolicy {
         let standardized = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
         let home = URL(fileURLWithPath: homeDirectory).resolvingSymlinksInPath().path
         guard standardized.hasPrefix(home + "/") || standardized == home + "/.Trash" else {
-            return false
+            // Sole exception: a top-level app bundle in /Applications (user-installed
+            // apps). Anything deeper — Utilities, files inside a bundle — stays protected.
+            return isTopLevelApplicationsBundle(standardized)
         }
         guard standardized != home else { return false }
 
@@ -130,5 +132,30 @@ enum PathSafetyPolicy {
         let home = URL(fileURLWithPath: homeDirectory).resolvingSymlinksInPath().path
         let standardized = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
         return standardized == home || standardized.hasPrefix(home + "/")
+    }
+
+    /// Exactly `/Applications/Name.app` — one component, `.app` suffix.
+    /// Deeper paths (Utilities, bundle contents) and non-app names never qualify.
+    static func isTopLevelApplicationsBundle(_ path: String) -> Bool {
+        let standardized = (path as NSString).standardizingPath
+        guard standardized.hasPrefix("/Applications/") else { return false }
+        let relative = String(standardized.dropFirst("/Applications/".count))
+        guard !relative.isEmpty, relative.hasSuffix(".app") else { return false }
+        return !relative.contains("/")
+    }
+
+    /// Whether this is a top-level app bundle the Unused apps rule may scan:
+    /// `/Applications/Name.app` or `~/Applications/Name.app`. Shared by discovery
+    /// and the trash allowlist so the two cannot drift apart.
+    static func isScannableApplicationBundle(_ path: String, homeDirectory: String) -> Bool {
+        let standardized = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
+        if isTopLevelApplicationsBundle(standardized) { return true }
+
+        let home = URL(fileURLWithPath: homeDirectory).resolvingSymlinksInPath().path
+        guard standardized.hasPrefix(home + "/") else { return false }
+        let relative = String(standardized.dropFirst(home.count + 1))
+        guard relative.hasPrefix("Applications/") else { return false }
+        let inner = String(relative.dropFirst("Applications/".count))
+        return !inner.isEmpty && inner.hasSuffix(".app") && !inner.contains("/")
     }
 }

@@ -19,7 +19,8 @@ enum RunningAppSafety {
     }
 }
 
-/// Moves selected scan results to Trash (never permanent delete, except Empty Trash).
+/// Moves selected scan results to Trash (never permanent delete, except Empty Trash
+/// and items explicitly removed when `deleteImmediately` is requested).
 actor CleanupService {
     struct MovedItem: Equatable, Identifiable, Sendable {
         var id: String { originalPath }
@@ -64,6 +65,8 @@ actor CleanupService {
         let failures: [Failure]
         /// True when Trash contents were permanently deleted (no undo).
         let emptiedTrash: Bool
+        /// True when just-cleaned items were permanently removed from Trash.
+        var permanentlyDeleted: Bool = false
 
         static let empty = Outcome(
             freedBytes: 0,
@@ -82,9 +85,12 @@ actor CleanupService {
     }
 
     /// Moves paths to Trash and/or permanently empties Trash when selected.
+    /// When `deleteImmediately` is true, just-cleaned items are permanently removed
+    /// from Trash right after the move so space is freed immediately (no undo).
     /// - Parameter onProgress: Invoked on the cooperative task before each category starts.
     func moveToTrash(
         _ results: [ScanResult],
+        deleteImmediately: Bool = false,
         onProgress: (@Sendable (Progress) async -> Void)? = nil
     ) async throws -> Outcome {
         var moved: [MovedItem] = []
@@ -170,14 +176,39 @@ actor CleanupService {
             }
         }
 
+        if deleteImmediately {
+            permanentlyRemoveMoved(moved, failures: &failures)
+        }
+
         let movedBytes = moved.reduce(Int64(0)) { $0 + $1.byteCount }
         return Outcome(
             freedBytes: movedBytes + emptiedBytes,
             itemCount: moved.count + emptiedCount,
             moved: moved,
             failures: failures,
-            emptiedTrash: emptiedTrash
+            emptiedTrash: emptiedTrash,
+            permanentlyDeleted: deleteImmediately && !moved.isEmpty
         )
+    }
+
+    /// Permanently removes just-cleaned items from Trash so their space is freed
+    /// immediately. Items whose removal fails stay in Trash and remain restorable.
+    private func permanentlyRemoveMoved(
+        _ items: [MovedItem],
+        failures: inout [Failure]
+    ) {
+        for item in items {
+            do {
+                try fileManager.removeItem(at: item.trashURL)
+            } catch {
+                failures.append(
+                    Failure(
+                        path: item.originalPath,
+                        message: "Cleaned, but could not free the space yet: \(error.localizedDescription)"
+                    )
+                )
+            }
+        }
     }
 
     /// Permanently deletes items currently in `~/.Trash`.

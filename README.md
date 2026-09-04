@@ -10,7 +10,7 @@ MacSweeper does three things well:
 
 1. **Scan** — find reclaimable space (browser/app caches, logs, Xcode junk, optional Dev folders)
 2. **Preview** — show every path, size, and risk level before anything moves
-3. **Clean safely** — move to Trash by default; never surprise-delete
+3. **Clean safely** — safety-checked deletion that frees space immediately; Trash undo available in Settings
 
 No malware scanner, no “RAM cleaner,” no upsells. Just real disk reclaim with transparent paths.
 
@@ -18,22 +18,24 @@ No malware scanner, no “RAM cleaner,” no upsells. Just real disk reclaim wit
 
 - **Home** — free-space ring, one primary **Scan**, and a secondary **Browse disk**
 - **Category results** — sized, risk-labeled rows (Safe / Moderate / Risky / Manual); Safe items checked by default
-- **Detail** — expand a category to see paths, why they’re listed, and per-item selection (plus age/size filters for Downloads and Mail)
-- **Clean flow** — confirm → progress → “Freed X GB” with Open Trash / undo hints
+- **Detail** — expand a category to see paths, why they’re listed, and per-item selection (plus age/size filters — any, >14, >30, >90 days — for Downloads, Mail, and Unused apps)
+- **Unused apps** — apps in `/Applications` / `~/Applications` not opened in 14+ days (macOS last-used date). Apple system apps, running apps, and apps with unknown usage are never listed; off by default, review before cleaning
+- **Clean flow** — confirm → progress → “Freed X GB”. “Delete immediately” (default on) permanently removes just-cleaned items so space is freed right away; turn it off to keep Trash undo
 - **Browse disk** — ncdu-style list drill-down under `~` (or a chosen home folder); **Cleanable** badges jump to matching rules after a scan
 - **Dev mode** (opt-in) — `node_modules`, virtualenvs, package-manager caches, Cargo/Gradle, Homebrew/Docker guidance
-- **Settings & history** — Dev defaults, custom Dev scan folders, optional persistent cleanup history
-- **~46 reclaim rules** — browsers, messaging, JetBrains, Steam, Xcode/simulator, Electron apps, and more (see `MacSweeper/Resources/cleanup-rules.json`)
+- **Settings & history** — Dev defaults, custom Dev scan folders, delete-immediately toggle, optional persistent cleanup history
+- **System Data coverage** — iPhone/iPad local backups, Time Machine local-snapshot guidance (`tmutil`), regenerable Apple caches
+- **~50 reclaim rules** — browsers, messaging, JetBrains, Steam, Xcode/simulator, Electron apps, and more (see `MacSweeper/Resources/cleanup-rules.json`)
 
 ## Safety
 
 | Rule | Behavior |
 |------|----------|
-| **Trash first** | Never permanent-delete except explicit Empty Trash |
+| **Safety-checked, then delete** | Every path passes the home-only allowlist + protected prefixes before deletion. “Delete immediately” (default on) permanently removes only the items just cleaned — never the whole Trash (that stays behind explicit Empty Trash). Turn the setting off for Trash-first with undo |
 | **Preview always** | Dry-run sizes; user confirms before any move |
 | **Risk labels** | Risky unchecked and de-emphasized; Manual is guide-only (copyable commands, no shell-out) |
 | **Hard exclusions** | Documents, Desktop, Pictures, Music, Movies, iCloud, keychains, profiles, SIP paths |
-| **Home only** | No system `/private/var` deep cleans; no sudo |
+| **Home only** | No system `/private/var` deep cleans; no sudo. Sole exception: top-level `/Applications/*.app` bundles (Unused apps rule) — anything deeper (Utilities, bundle contents) stays protected |
 | **Audit** | Session (and optional on-disk) log of what moved where |
 
 Full Disk Access is requested only when needed (e.g. Empty Trash), with a clear explanation.

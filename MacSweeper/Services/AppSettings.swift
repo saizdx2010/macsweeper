@@ -15,12 +15,20 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(keepCleanupHistory, forKey: Keys.keepHistory) }
     }
 
+    /// When true, cleaned items are permanently deleted right after cleaning
+    /// instead of waiting in Trash for undo. Default on: safe items are
+    /// regenerable, so freeing the space immediately is the expected behavior.
+    @Published var deleteImmediately: Bool {
+        didSet { defaults.set(deleteImmediately, forKey: Keys.deleteImmediately) }
+    }
+
     @Published private(set) var customDevRoots: [DevRoot] = []
 
     private let defaults: UserDefaults
 
     private enum Keys {
         static let keepHistory = "settings.keepCleanupHistory"
+        static let deleteImmediately = "settings.deleteImmediately"
         static let customDevRoots = "settings.customDevRoots"
     }
 
@@ -40,6 +48,11 @@ final class AppSettings: ObservableObject {
             keepCleanupHistory = true
         } else {
             keepCleanupHistory = defaults.bool(forKey: Keys.keepHistory)
+        }
+        if defaults.object(forKey: Keys.deleteImmediately) == nil {
+            deleteImmediately = true
+        } else {
+            deleteImmediately = defaults.bool(forKey: Keys.deleteImmediately)
         }
         customDevRoots = Self.loadDevRoots(from: defaults)
     }

@@ -3,6 +3,7 @@ import Foundation
 /// Age / size filters for Detail list categories (Downloads, Mail, discovery).
 enum DetailAgeFilter: String, CaseIterable, Identifiable, Sendable {
     case any
+    case older14
     case older30
     case older90
 
@@ -11,6 +12,7 @@ enum DetailAgeFilter: String, CaseIterable, Identifiable, Sendable {
     var label: String {
         switch self {
         case .any: return "Any age"
+        case .older14: return ">14 days"
         case .older30: return ">30 days"
         case .older90: return ">90 days"
         }
@@ -20,6 +22,9 @@ enum DetailAgeFilter: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .any:
             return true
+        case .older14:
+            guard let date else { return false }
+            return date < now.addingTimeInterval(-14 * 24 * 60 * 60)
         case .older30:
             guard let date else { return false }
             return date < now.addingTimeInterval(-30 * 24 * 60 * 60)

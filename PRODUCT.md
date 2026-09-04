@@ -10,7 +10,7 @@ Most people pay for CleanMyMac for the **UI and confidence**, not magic cleanup 
 
 1. **Scan** — find reclaimable space (caches, logs, old downloads)
 2. **Preview** — show what will be removed, with sizes and risk level
-3. **Clean safely** — move to Trash by default, never surprise-delete
+3. **Clean safely** — safety-checked deletion that frees space immediately; Trash undo available in Settings
 
 No feature bloat. No scare tactics. Free forever — no subscription, no tip jar.
 
@@ -43,11 +43,19 @@ Scanned and selected by default (risk: **Safe**):
 - Browser caches (Chrome, Safari, Firefox)
 - Old logs in `~/Library/Logs`
 - Xcode DerivedData (if present)
+- Help Viewer cache (`com.apple.helpd`)
 
 Off by default / opt-in:
 
-- Old files in `~/Downloads` (risk: **Moderate** — user reviews before clean)
+- Old files in `~/Downloads` (risk: **Moderate** — user reviews before clean; Detail age/size filters include >14 days)
+- Unused apps — in `/Applications` and `~/Applications` not opened in 14+ days by macOS last-used date (risk: **Moderate**). Apple system apps, running apps, and apps with unknown usage are never listed. Sole exception to the home-only allowlist: top-level `/Applications/*.app` bundles only — Utilities, nested folders, and bundle contents stay protected
+- iPhone / iPad local backups (risk: **Moderate** — permanent data loss unless an iCloud backup exists)
 - Empty Trash (optional, **off by default**; needs Full Disk Access)
+
+Manual guidance (shown when a marker path exists; MacSweeper never executes these):
+
+- Time Machine local snapshots via `tmutil thinlocalsnapshots` — the usual hidden cause of a huge "System Data" number (shown once Time Machine is configured)
+- Homebrew `brew cleanup -s`, Docker `docker system prune`, `xcrun simctl delete unavailable`
 
 Deferred to [Phase 4 — Dev mode](#build-phases) (shipped as opt-in):
 
@@ -63,7 +71,7 @@ Hard exclusions — never listed as cleanable, even if large:
 - iCloud Drive / Photos libraries
 - Keychains, passwords, browser profiles (except regenerable cache dirs)
 - SIP-protected system paths
-- Anything outside the user home folder (v1)
+- Anything outside the user home folder, except top-level `/Applications/*.app` bundles (Unused apps rule; nothing deeper)
 
 ## Safety Rules
 
@@ -71,7 +79,7 @@ These are the core differentiators. Borrowed from [mac-cleanup-go](https://githu
 
 | Rule | Description |
 |------|-------------|
-| **Trash first** | Never permanent delete except explicit "Empty Trash" |
+| **Safety-checked, then delete** | Every path passes the home-only allowlist + protected prefixes first. "Delete immediately" (default **on**) permanently removes only the items just cleaned — never the whole Trash, which stays behind explicit "Empty Trash". Turn the setting off for Trash-first with undo |
 | **Preview always** | Dry-run before any deletion; user must confirm |
 | **Risk labels** | Safe / Moderate / Risky / Manual — Risky unchecked by default |
 | **SIP-aware** | Don't touch protected system paths |
@@ -89,7 +97,7 @@ These are the core differentiators. Borrowed from [mac-cleanup-go](https://githu
 
 ### Undo & Audit
 
-- **Undo:** After a clean, show "Open Trash" (and optionally restore via Finder). Session-level undo = reverse the Trash moves for items still in Trash. No permanent-delete undo.
+- **Undo:** With "Delete immediately" off, after a clean show "Open Trash" (and optionally restore via Finder). Session-level undo = reverse the Trash moves for items still in Trash. No permanent-delete undo. With the setting on (default), items are permanently removed right after cleaning, so the done screen hides Undo and says so.
 - **Audit log:** Record timestamp, category id, paths, bytes, and destination for each move. Keep the latest session in-app; optionally write to `~/Library/Application Support/MacSweeper/cleanup.log`.
 
 ## Tech Stack

@@ -238,6 +238,39 @@
     "icon": "internaldrive"
   },
   {
+    "id": "safari_help_cache",
+    "label": "Help Viewer cache",
+    "paths": [
+      "~/Library/Caches/com.apple.helpd"
+    ],
+    "risk": "safe",
+    "description": "Offline help-book caches. macOS re-downloads help content only when you open Help again.",
+    "icon": "internaldrive"
+  },
+  {
+    "id": "ios_device_backups",
+    "label": "iPhone / iPad backups",
+    "paths": [
+      "~/Library/Application Support/MobileSync/Backup"
+    ],
+    "risk": "moderate",
+    "scan": "list_children",
+    "description": "Local backups Finder makes of connected iPhone and iPad. Deleting removes them permanently \u2014 keep an iCloud backup or make a fresh one before cleaning.",
+    "icon": "iphone"
+  },
+  {
+    "id": "time_machine_snapshots",
+    "label": "Time Machine snapshots",
+    "paths": [
+      "~/Library/Preferences/com.apple.TimeMachine.plist"
+    ],
+    "risk": "manual",
+    "guide_only": true,
+    "guide_command": "tmutil thinlocalsnapshots / 999999999999 4",
+    "description": "Local APFS snapshots can silently add tens of GB to \u201cSystem Data\u201d in Storage settings. Run the command in Terminal to thin them \u2014 check first with tmutil listlocalsnapshots /. MacSweeper does not execute tmutil. Your backup disk is not touched.",
+    "icon": "clock.arrow.circlepath"
+  },
+  {
     "id": "user_logs",
     "label": "User logs",
     "paths": [
@@ -364,6 +397,19 @@
     "action": "empty_trash",
     "description": "Permanently deletes everything currently in Trash. Off by default. May need Full Disk Access for some items.",
     "icon": "trash"
+  },
+  {
+    "id": "unused_apps",
+    "label": "Unused apps",
+    "paths": [
+      "/Applications",
+      "~/Applications"
+    ],
+    "risk": "moderate",
+    "scan": "unused_apps",
+    "min_age_days": 14,
+    "description": "Apps in your Applications folders not opened in 14+ days, by macOS last-used date. Apple system apps, running apps, and apps with unknown usage are never listed. Review before cleaning — trashing removes the app itself (its settings may remain; reinstall from the App Store or developer).",
+    "icon": "app"
   },
   {
     "id": "dev_node_modules",
@@ -497,6 +543,7 @@
     ],
     "risk": "manual",
     "group": "dev",
+    "guide_only": true,
     "guide_command": "brew cleanup -s",
     "description": "Removes old formula versions and scrubbed caches. Run the command in Terminal \u2014 MacSweeper does not execute brew. Size is not estimated here; use Homebrew caches above to Trash downloads.",
     "icon": "mug"

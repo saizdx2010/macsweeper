@@ -29,6 +29,21 @@ struct SettingsView: View {
 
                     MSCard {
                         VStack(alignment: .leading, spacing: 12) {
+                            Text("CLEANING")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+
+                            Toggle("Delete immediately", isOn: $settings.deleteImmediately)
+                                .toggleStyle(.switch)
+
+                            Text("When on, cleaned items are permanently deleted right away instead of waiting in Trash. Space is freed immediately and items cannot be restored. Turn off to keep the Trash undo.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    MSCard {
+                        VStack(alignment: .leading, spacing: 12) {
                             Text("DEV FOLDERS")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)

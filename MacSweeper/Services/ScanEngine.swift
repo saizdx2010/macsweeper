@@ -114,6 +114,14 @@ actor ScanEngine {
             return try measureListChildren(category)
         }
 
+        if category.scan == .unusedApps {
+            return try UnusedAppScanner.measure(
+                category: category,
+                fileManager: fileManager,
+                homeDirectory: homeDirectory
+            )
+        }
+
         // Manual guidance: show when a marker path exists, even at 0 measured bytes.
         if category.risk == .manual, category.guideCommand != nil {
             return try measureManualGuide(category)
@@ -246,8 +254,10 @@ actor ScanEngine {
             }
             anyExists = true
 
-            // Homebrew cleanup guide: presence only (avoid double-counting cache size).
-            if category.id == "homebrew_cleanup" {
+            // Guide-only rules (Homebrew cleanup, Time Machine snapshots): presence
+            // only. Their paths are shared with other rules or have no real on-disk
+            // size, so measuring would double-count or mislead.
+            if category.guideOnly {
                 continue
             }
 

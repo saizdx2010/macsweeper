@@ -292,6 +292,67 @@ final class TrashRestoreTests: XCTestCase {
         XCTAssertEqual(outcome.failures.count, 1)
         XCTAssertTrue(FileManager.default.fileExists(atPath: docs.path))
     }
+
+    func testDeleteImmediatelyPermanentlyRemovesCleanedItems() async throws {
+        let caches = tempRoot.appendingPathComponent("Library/Caches/DeleteMe", isDirectory: true)
+        try FileManager.default.createDirectory(at: caches, withIntermediateDirectories: true)
+        let file = caches.appendingPathComponent("blob.dat")
+        try Data("bye".utf8).write(to: file)
+
+        let category = ScanCategory(
+            id: "user_app_caches",
+            label: "App caches",
+            paths: ["~/Library/Caches"],
+            risk: .safe,
+            description: "test"
+        )
+        let result = ScanResult(
+            category: category,
+            paths: [ScannedPath(path: file.path, byteCount: 3, isSelected: true)],
+            isSelected: true
+        )
+
+        let outcome = try await service.moveToTrash([result], deleteImmediately: true)
+        XCTAssertEqual(outcome.itemCount, 1)
+        XCTAssertTrue(outcome.permanentlyDeleted)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+
+        // The moved item no longer sits in Trash, so undo cannot restore it.
+        let restored = try await service.restoreFromTrash(outcome.moved)
+        XCTAssertEqual(restored.itemCount, 0)
+        XCTAssertEqual(restored.failures.count, 1)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+    }
+
+    func testDeleteImmediatelyKeepsItemRestorableWhenRemovalFails() async throws {
+        let caches = tempRoot.appendingPathComponent("Library/Caches/Stubborn", isDirectory: true)
+        try FileManager.default.createDirectory(at: caches, withIntermediateDirectories: true)
+        let file = caches.appendingPathComponent("stubborn.dat")
+        try Data("stuck".utf8).write(to: file)
+
+        let category = ScanCategory(
+            id: "user_app_caches",
+            label: "App caches",
+            paths: ["~/Library/Caches"],
+            risk: .safe,
+            description: "test"
+        )
+        let result = ScanResult(
+            category: category,
+            paths: [ScannedPath(path: file.path, byteCount: 5, isSelected: true)],
+            isSelected: true
+        )
+
+        let outcome = try await service.moveToTrash([result], deleteImmediately: true)
+        // Freeing the space failed, but the clean itself succeeded and undo still works.
+        XCTAssertEqual(outcome.itemCount, 1)
+        XCTAssertEqual(outcome.failures.count, 1)
+        XCTAssertTrue(outcome.failures[0].message.contains("could not free"))
+
+        let restored = try await service.restoreFromTrash(outcome.moved)
+        XCTAssertEqual(restored.itemCount, 1)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
+    }
 }
 
 /// Routes `trashItem` into a fake `~/.Trash` for isolated tests.
@@ -316,6 +377,13 @@ final class FakeTrashFileManager: FileManager, @unchecked Sendable {
         }
         try FileManager.default.moveItem(at: url, to: dest)
         outResultingURL?.pointee = dest as NSURL
+    }
+
+    override func removeItem(at URL: URL) throws {
+        if URL.lastPathComponent.contains("stubborn") {
+            throw CocoaError(.fileWriteUnknown)
+        }
+        try FileManager.default.removeItem(at: URL)
     }
 }
 
@@ -477,5 +545,52 @@ final class ScanResultSelectionTests: XCTestCase {
 
         result.setAllPathsSelected(false)
         XCTAssertNil(result.selectingOnlyCheckedPaths())
+    }
+}
+
+final class GuideOnlyRuleTests: XCTestCase {
+    func testGuideOnlyDefaultsToFalseAndDecodesFromJSON() throws {
+        let json = #"""
+        {"id":"x","label":"X","paths":["~/a"],"risk":"manual","description":"d","guide_command":"echo hi","guide_only":true}
+        """#
+        let withFlag = try JSONDecoder().decode(ScanCategory.self, from: Data(json.utf8))
+        XCTAssertTrue(withFlag.guideOnly)
+
+        let withoutFlag = ScanCategory(id: "y", label: "Y", paths: [], risk: .manual, description: "d")
+        XCTAssertFalse(withoutFlag.guideOnly)
+    }
+
+    /// The bundled rules must stay decodable and keep their System Data coverage:
+    /// snapshot guidance, iOS backups, and guide-only semantics.
+    func testBundledRulesCoverSafeSystemDataTargets() throws {
+        let rulesURL = Bundle(for: ScanEngine.self).url(forResource: "cleanup-rules", withExtension: "json")
+        let data = try Data(contentsOf: try XCTUnwrap(rulesURL, "cleanup-rules.json missing from app bundle"))
+        let categories = try JSONDecoder().decode([ScanCategory].self, from: data)
+
+        let ids = Set(categories.map(\.id))
+        XCTAssertTrue(ids.contains("time_machine_snapshots"))
+        XCTAssertTrue(ids.contains("ios_device_backups"))
+        XCTAssertTrue(ids.contains("safari_help_cache"))
+
+        let snapshots = categories.first { $0.id == "time_machine_snapshots" }
+        XCTAssertEqual(snapshots?.risk, .manual)
+        XCTAssertEqual(snapshots?.guideOnly, true)
+        XCTAssertNotEqual(snapshots?.guideCommand, nil, "snapshot cleanup must guide via tmutil, not delete files")
+
+        XCTAssertTrue(
+            categories.first { $0.id == "homebrew_cleanup" }?.guideOnly == true,
+            "homebrew guide is presence-only to avoid double-counting cache size"
+        )
+
+        for category in categories where category.guideCommand != nil {
+            XCTAssertEqual(category.risk, .manual, "\(category.id) guides must stay manual")
+        }
+
+        for category in categories {
+            XCTAssertTrue(
+                category.guideOnly || !category.paths.isEmpty,
+                "\(category.id) needs at least one path unless it is guide-only"
+            )
+        }
     }
 }
