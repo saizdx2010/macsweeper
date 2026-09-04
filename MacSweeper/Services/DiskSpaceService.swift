@@ -39,3 +39,13 @@ final class DiskSpaceService {
         )
     }
 }
+
+/// Observed free-space change between two volume readings — the honest
+/// cross-check for a clean ("Finder now shows +2.6 GB").
+enum FreeSpaceDelta {
+    /// nil unless both readings exist (e.g. the volume query failed once).
+    static func gainBytes(before: Int64?, after: Int64?) -> Int64? {
+        guard let before, let after else { return nil }
+        return after - before
+    }
+}

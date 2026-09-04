@@ -17,8 +17,11 @@ struct CleanFlowView: View {
     @State private var didUndo = false
     @State private var showDoneCelebration = false
     @State private var cleanProgress: CleanupService.Progress?
+    @State private var freeSpaceBeforeClean: Int64?
+    @State private var observedGainBytes: Int64?
 
     private let cleanup = CleanupService()
+    private let diskSpace = DiskSpaceService()
 
     private var totalBytes: Int64 {
         results.reduce(0) { $0 + $1.totalBytes }
@@ -312,6 +315,14 @@ struct CleanFlowView: View {
                     .monospacedDigit()
                     .opacity(showDoneCelebration ? 1 : 0)
 
+                if let gain = observedGainBytes, gain > 0 {
+                    Text("Finder now shows about +\(ByteCountFormatter.string(fromByteCount: gain, countStyle: .file)) free")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .accessibilityLabel("Finder now shows about \(ByteCountFormatter.string(fromByteCount: gain, countStyle: .file)) more free space")
+                }
+
                 if outcome?.emptiedTrash == true && !(outcome?.moved.isEmpty == false) {
                     Text("\(outcome?.itemCount ?? 0) items permanently deleted from Trash")
                         .foregroundStyle(.secondary)
@@ -407,6 +418,8 @@ struct CleanFlowView: View {
         errorMessage = nil
         didUndo = false
         cleanProgress = nil
+        observedGainBytes = nil
+        freeSpaceBeforeClean = diskSpace.currentSnapshot()?.freeBytes
         do {
             let result = try await cleanup.moveToTrash(
                 results,
@@ -418,6 +431,11 @@ struct CleanFlowView: View {
             }
             outcome = result
             auditLog.finishClean(outcome: result)
+            // Re-read free space so the done screen can show what Finder sees.
+            observedGainBytes = FreeSpaceDelta.gainBytes(
+                before: freeSpaceBeforeClean,
+                after: diskSpace.currentSnapshot()?.freeBytes
+            )
             phase = .done
         } catch is CancellationError {
             phase = .confirm
