@@ -2,7 +2,7 @@
 
 Where MacSweeper goes next — version by version. For the full product spec (vision, safety model, architecture), see [PRODUCT.md](PRODUCT.md). For build/test/release instructions, see [README.md](README.md).
 
-- **Current release:** v1.0.0 (`MARKETING_VERSION` in [project.yml](project.yml))
+- **Current release:** v1.1.0 (`MARKETING_VERSION` in [project.yml](project.yml))
 - **Last updated:** 2026-09-04
 - **Ordering, not dates:** releases are ordered by priority; no calendar promises.
 
@@ -75,17 +75,17 @@ The complete scan → preview → clean loop, shipped and notarized:
 
 ---
 
-## 📅 v1.1.0 — Orphaned-app leftovers (Phase 10)
+## ✅ v1.1.0 — Orphaned-app leftovers (Phase 10)
 
 **Goal:** reclaim the prefs / Application Support / caches that apps leave behind when uninstalled — the biggest remaining reclaim category. (Mole-inspired; the one PRODUCT.md defers to Phase 10.)
 
-- [ ] Detect installed apps in `/Applications` and `~/Applications` (reuse Unused-apps scanner infrastructure)
-- [ ] Map uninstalled apps to their leftover paths: `~/Library/Preferences`, `~/Library/Application Support`, `~/Library/Caches`, `~/Library/Logs`, `~/Library/Saved Application State`, `~/Library/Containers` (user-owned only)
-- [ ] Risk model: **Moderate/Risky, unchecked by default** — leftover prefs may hold licenses/settings for reinstallable apps
-- [ ] Hard exclusions carry over unchanged (Documents, profiles, keychains, anything outside home)
-- [ ] Detail view groups leftovers per app ("Uninstalled app leftovers → Slack — 3 paths, 412 MB") with per-path selection
-- [ ] "Why is this here?" copy explains the orphan heuristic and what won't be listed
-- [ ] Safety tests: orphan rules never match an installed app's bundle or protected prefixes
+- ✅ Detect installed apps in `/Applications` and `~/Applications` (reuse Unused-apps scanner infrastructure)
+- ✅ Map uninstalled apps to their leftover paths: `~/Library/Preferences`, `~/Library/Application Support`, `~/Library/Caches`, `~/Library/Logs`, `~/Library/Saved Application State`, `~/Library/Containers` (user-owned only)
+- ✅ Risk model: **Moderate, unchecked by default** — leftover prefs may hold licenses/settings for reinstallable apps
+- ✅ Hard exclusions carry over unchanged (Documents, profiles, keychains, anything outside home)
+- ✅ Detail view groups leftovers per app ("Uninstalled app leftovers → Slack — 3 paths, 412 MB") with per-path selection
+- ✅ "Why is this here?" copy explains the orphan heuristic and what won't be listed
+- ✅ Safety tests: orphan rules never match an installed app's bundle or protected prefixes
 
 ## 📅 v1.2.0 — APFS-aware sizing (Phase 11 completion)
 
