@@ -1,4 +1,5 @@
 import XCTest
+import Darwin
 @testable import MacSweeper
 
 /// APFS-aware sizing: hard links, clones, and sparse files must be counted the
@@ -75,5 +76,77 @@ final class DiskSizingTests: XCTestCase {
             deduper: &freshDeduper
         )
         XCTAssertEqual(independentBytes, firstBytes, "a fresh walk still reports the file")
+    }
+
+    // MARK: Free-space delta
+
+    func testFreeSpaceDeltaGainMath() {
+        XCTAssertEqual(FreeSpaceDelta.gainBytes(before: Int64(1_000), after: Int64(3_600)), 2_600)
+        XCTAssertEqual(
+            FreeSpaceDelta.gainBytes(before: Int64(3_600), after: Int64(1_000)),
+            -2_600,
+            "negative readings stay raw — the done screen only shows gains"
+        )
+        XCTAssertNil(FreeSpaceDelta.gainBytes(before: nil, after: Int64(5)))
+        XCTAssertNil(FreeSpaceDelta.gainBytes(before: Int64(5), after: nil))
+    }
+
+    // MARK: APFS clones
+
+    func testAPFSCloneIsCountedOncePerWalk() throws {
+        let original = try makeFile(name: "clone-source.bin", bytes: 1_048_576)
+        let clone = tempRoot.appendingPathComponent("clone.bin")
+
+        let status = original.withUnsafeFileSystemRepresentation { source in
+            clone.withUnsafeFileSystemRepresentation { target in
+                clonefile(source, target, 0)
+            }
+        }
+        guard status == 0 else {
+            throw XCTSkip("clonefile unavailable on this volume — clone dedupe not exercised here")
+        }
+
+        var deduper = DiskMeasurement.Deduper()
+        let bothBytes = try DiskMeasurement.measureAllocatedSize(at: tempRoot, deduper: &deduper)
+
+        var freshDeduper = DiskMeasurement.Deduper()
+        let singleBytes = try DiskMeasurement.measureAllocatedSize(
+            at: original,
+            fileManager: .default,
+            deduper: &freshDeduper
+        )
+
+        XCTAssertEqual(bothBytes, singleBytes, "clones share blocks and are allocated storage once")
+
+        // A clone pair that avoids dedupe would report ~2× the single size.
+        XCTAssertGreaterThan(singleBytes, 0)
+    }
+
+    // MARK: Sparse files
+
+    func testSparseFileReportsAllocatedNotLogicalSize() throws {
+        let logicalBytes = 8 * 1_048_576
+        let sparse = tempRoot.appendingPathComponent("sparse.bin")
+        let fd = open(sparse.path, O_CREAT | O_WRONLY | O_TRUNC, 0o644)
+        defer { close(fd) }
+        guard fd >= 0 else { return XCTFail("could not create sparse fixture") }
+        guard ftruncate(fd, off_t(logicalBytes)) == 0 else {
+            return XCTFail("could not truncate sparse fixture")
+        }
+
+        var deduper = DiskMeasurement.Deduper()
+        let allocated = try DiskMeasurement.measureAllocatedSize(
+            at: sparse,
+            fileManager: .default,
+            deduper: &deduper
+        )
+
+        let logical = (try sparse.resourceValues(forKeys: [.fileSizeKey])).fileSize ?? 0
+        XCTAssertEqual(logical, logicalBytes)
+        XCTAssertLessThan(
+            allocated,
+            Int64(logicalBytes),
+            "sparse holes must not be counted as allocated storage"
+        )
     }
 }
