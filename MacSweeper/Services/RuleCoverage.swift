@@ -141,6 +141,11 @@ enum RuleCoverage {
                         risk: category.risk
                     )
                 }
+
+            case .orphanedLeftovers:
+                // Orphan hits are computed live (which bundle IDs are gone);
+                // live scan results cover them, so there is no static index.
+                continue
             }
         }
         return nil

@@ -10,6 +10,26 @@ struct ScannedPath: Identifiable, Hashable {
     var isSelected: Bool
     /// Content modification date when available (used by Downloads filters).
     let contentModificationDate: Date?
+    /// Optional per-app grouping key (orphaned-app leftovers: the orphan bundle ID).
+    let groupKey: String?
+    /// Human label for the group, e.g. "Slack"; resolved per group after a scan.
+    var groupLabel: String?
+
+    init(
+        path: String,
+        byteCount: Int64,
+        isSelected: Bool = true,
+        contentModificationDate: Date? = nil,
+        groupKey: String? = nil,
+        groupLabel: String? = nil
+    ) {
+        self.path = path
+        self.byteCount = byteCount
+        self.isSelected = isSelected
+        self.contentModificationDate = contentModificationDate
+        self.groupKey = groupKey
+        self.groupLabel = groupLabel
+    }
 
     /// Last path component, e.g. `report.pdf`.
     var displayName: String {
@@ -24,18 +44,6 @@ struct ScannedPath: Identifiable, Hashable {
             return "~" + path.dropFirst(home.count)
         }
         return path
-    }
-
-    init(
-        path: String,
-        byteCount: Int64,
-        isSelected: Bool = true,
-        contentModificationDate: Date? = nil
-    ) {
-        self.path = path
-        self.byteCount = byteCount
-        self.isSelected = isSelected
-        self.contentModificationDate = contentModificationDate
     }
 }
 

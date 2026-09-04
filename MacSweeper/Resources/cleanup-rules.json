@@ -408,8 +408,24 @@
     "risk": "moderate",
     "scan": "unused_apps",
     "min_age_days": 14,
-    "description": "Apps in your Applications folders not opened in 14+ days, by macOS last-used date. Apple system apps, running apps, and apps with unknown usage are never listed. Review before cleaning — trashing removes the app itself (its settings may remain; reinstall from the App Store or developer).",
+    "description": "Apps in your Applications folders not opened in 14+ days, by macOS last-used date. Apple system apps, running apps, and apps with unknown usage are never listed. Review before cleaning \u2014 trashing removes the app itself (its settings may remain; reinstall from the App Store or developer).",
     "icon": "app"
+  },
+  {
+    "id": "orphaned_app_leftovers",
+    "label": "Uninstalled app leftovers",
+    "paths": [
+      "~/Library/Preferences",
+      "~/Library/Application Support",
+      "~/Library/Caches",
+      "~/Library/Logs",
+      "~/Library/Saved Application State",
+      "~/Library/Containers"
+    ],
+    "risk": "moderate",
+    "description": "Preferences, caches, and support files left behind by apps that are no longer installed. Nothing is pre-selected \u2014 leftover preferences can hold licenses or settings you may want if you reinstall an app.",
+    "scan": "orphaned_leftovers",
+    "icon": "shippingbox.and.arrow.backward"
   },
   {
     "id": "dev_node_modules",

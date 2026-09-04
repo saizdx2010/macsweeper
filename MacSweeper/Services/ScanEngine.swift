@@ -122,6 +122,16 @@ actor ScanEngine {
             )
         }
 
+        if category.scan == .orphanedLeftovers {
+            var deduper = DiskMeasurement.Deduper()
+            return try OrphanedAppLeftoverScanner.measure(
+                category: category,
+                fileManager: fileManager,
+                homeDirectory: homeDirectory,
+                deduper: &deduper
+            )
+        }
+
         // Manual guidance: show when a marker path exists, even at 0 measured bytes.
         if category.risk == .manual, category.guideCommand != nil {
             return try measureManualGuide(category)

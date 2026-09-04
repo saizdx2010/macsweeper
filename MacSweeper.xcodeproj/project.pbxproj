@@ -34,6 +34,8 @@
 		9E72539C3B6D483365D19F1D /* DetailPathFilters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292B130FAC09992001C459AD /* DetailPathFilters.swift */; };
 		9F780ED58C215B516D4B6CBB /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A42846CF146659AB5D63326C /* HomeView.swift */; };
 		A3C69125D73AAABFAA1D22B9 /* FinderReveal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C8E3FE949431A2E7D24D582 /* FinderReveal.swift */; };
+		A5A317891CBD39E238FBC8D8 /* OrphanedAppLeftoverScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28AE6771F2AEF6963BD346FF /* OrphanedAppLeftoverScanner.swift */; };
+		A6EBF796CF85E1D54D288D52 /* OrphanedLeftoversTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3B5A92DAC24824124CDA986 /* OrphanedLeftoversTests.swift */; };
 		AA4E6F9C3D3875406C04D112 /* CategoryIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F2D49DB28A2D3A92A08E42 /* CategoryIcon.swift */; };
 		B574918FB686004114B0FCA2 /* RiskBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 695E1D76E98EF6B1C03AE9CE /* RiskBadge.swift */; };
 		B7EACD8A3AF80B09F6017925 /* CleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03415387026D5AE19CD73007 /* CleanupService.swift */; };
@@ -69,6 +71,7 @@
 		130BEDC5315FFCE5F30C5530 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		22FE54B1BAE4E12DD6D53D25 /* ScanResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanResultsView.swift; sourceTree = "<group>"; };
 		271A0897AA42C150138B9D00 /* DiskMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskMeasurement.swift; sourceTree = "<group>"; };
+		28AE6771F2AEF6963BD346FF /* OrphanedAppLeftoverScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrphanedAppLeftoverScanner.swift; sourceTree = "<group>"; };
 		292B130FAC09992001C459AD /* DetailPathFilters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailPathFilters.swift; sourceTree = "<group>"; };
 		2A702EAA2CE3FB7AA2AA4DA7 /* DiskSpaceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskSpaceService.swift; sourceTree = "<group>"; };
 		33874FBF0CFF80B019A86F6B /* MSTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MSTheme.swift; sourceTree = "<group>"; };
@@ -102,6 +105,7 @@
 		E85F4632C4A68AF78377CD40 /* DiskBrowseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskBrowseService.swift; sourceTree = "<group>"; };
 		EBF284DE2B1E8C08CB22FB02 /* UnusedAppScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnusedAppScanner.swift; sourceTree = "<group>"; };
 		F36E0F5DF82E0A4A84314D2E /* AuditLogService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuditLogService.swift; sourceTree = "<group>"; };
+		F3B5A92DAC24824124CDA986 /* OrphanedLeftoversTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrphanedLeftoversTests.swift; sourceTree = "<group>"; };
 		F74B6AAA7D166E0BA57A1EBE /* cleanup-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "cleanup-rules.json"; sourceTree = "<group>"; };
 		F8F2D49DB28A2D3A92A08E42 /* CategoryIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryIcon.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -157,6 +161,7 @@
 				2A702EAA2CE3FB7AA2AA4DA7 /* DiskSpaceService.swift */,
 				0C8E3FE949431A2E7D24D582 /* FinderReveal.swift */,
 				D44BEC7001E3F9DF9829CD4F /* FullDiskAccessService.swift */,
+				28AE6771F2AEF6963BD346FF /* OrphanedAppLeftoverScanner.swift */,
 				369DBB39C973A9248B109CE3 /* PathSafetyPolicy.swift */,
 				346291A9BD2620932030C501 /* RuleCoverage.swift */,
 				A88BF90177A8C59D9B06421D /* ScanEngine.swift */,
@@ -170,6 +175,7 @@
 			isa = PBXGroup;
 			children = (
 				B3A3DD5F8A5483484DC0C025 /* CleanupSafetyTests.swift */,
+				F3B5A92DAC24824124CDA986 /* OrphanedLeftoversTests.swift */,
 				0782F296EF521F7AF1B344A5 /* UnusedAppsTests.swift */,
 				4B9533BADF66B59E75B93583 /* UXPolishTests.swift */,
 			);
@@ -351,6 +357,7 @@
 				B9EDD1776C15B4DD8AB5BF4F /* MSTheme.swift in Sources */,
 				1611116B64EC3BC736FD7407 /* MacSweeperApp.swift in Sources */,
 				DC8DD40FBD8796026CBBB232 /* NavigationChrome.swift in Sources */,
+				A5A317891CBD39E238FBC8D8 /* OrphanedAppLeftoverScanner.swift in Sources */,
 				D54280D6240CCD85DDB89812 /* PathSafetyPolicy.swift in Sources */,
 				B574918FB686004114B0FCA2 /* RiskBadge.swift in Sources */,
 				CB29CC1C764F0BE791A46E19 /* RiskLevel.swift in Sources */,
@@ -371,6 +378,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				34DAD9DEFEEC36801610EE55 /* CleanupSafetyTests.swift in Sources */,
+				A6EBF796CF85E1D54D288D52 /* OrphanedLeftoversTests.swift in Sources */,
 				180B6D765157ED9108CFA994 /* UXPolishTests.swift in Sources */,
 				94338B00493093CB987865B7 /* UnusedAppsTests.swift in Sources */,
 			);

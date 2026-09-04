@@ -14,6 +14,8 @@ enum ScanStrategy: String, Codable, Hashable {
     case listChildren = "list_children"
     /// App bundles in the configured roots (e.g. /Applications) unused for `min_age_days`.
     case unusedApps = "unused_apps"
+    /// Library files left behind by apps that are no longer installed.
+    case orphanedLeftovers = "orphaned_leftovers"
 }
 
 /// A cleanup rule loaded from `cleanup-rules.json`.
