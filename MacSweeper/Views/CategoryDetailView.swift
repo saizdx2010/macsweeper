@@ -19,13 +19,20 @@ struct CategoryDetailView: View {
             || result.category.action == .emptyTrash
             || result.category.scan == .findNamedDirs
             || result.category.scan == .unusedApps
+            || result.category.scan == .orphanedLeftovers
+    }
+
+    /// Orphaned-app leftovers are listed in per-app groups.
+    private var usesGroupedList: Bool {
+        result.category.scan == .orphanedLeftovers
     }
 
     private var showsFilters: Bool {
         result.supportsItemSelection
             && (result.category.scan == .listChildren
                 || result.category.scan == .findNamedDirs
-                || result.category.scan == .unusedApps)
+                || result.category.scan == .unusedApps
+                || result.category.scan == .orphanedLeftovers)
     }
 
     private var filteredPaths: [ScannedPath] {
@@ -37,7 +44,13 @@ struct CategoryDetailView: View {
     }
 
     private var omittedPathCount: Int {
-        DetailPathQuery.omittedCount(total: filteredPaths.count, limit: displayLimit)
+        if usesGroupedList {
+            return LeftoverGrouping.displayGroups(
+                from: LeftoverGrouping.groups(from: filteredPaths),
+                limit: displayLimit
+            ).omittedRows
+        }
+        return DetailPathQuery.omittedCount(total: filteredPaths.count, limit: displayLimit)
     }
 
     private var itemsSectionTitle: String {
@@ -62,6 +75,10 @@ struct CategoryDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: MSTheme.sectionSpacing) {
                     whyCard
+
+                    if result.category.scan == .orphanedLeftovers {
+                        orphanExplainerCard
+                    }
 
                     if let command = result.category.guideCommand {
                         commandCard(command)
@@ -103,6 +120,100 @@ struct CategoryDetailView: View {
         }
     }
 
+    // MARK: - Grouped leftovers
+
+    private var groupedPathsList: some View {
+        let display = LeftoverGrouping.displayGroups(
+            from: LeftoverGrouping.groups(from: filteredPaths),
+            limit: displayLimit
+        )
+        return VStack(alignment: .leading, spacing: 10) {
+            ForEach(display.groups) { group in
+                VStack(alignment: .leading, spacing: 0) {
+                    groupHeader(for: group)
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(group.paths) { item in
+                            pathRow(for: item)
+                                .padding(.leading, 28)
+                            if item.id != group.paths.last?.id {
+                                Divider().opacity(0.3)
+                            }
+                        }
+                    }
+                    .padding(.leading, 8)
+                }
+                .padding(.bottom, 6)
+            }
+
+            if display.omittedRows > 0 {
+                Button("Show more (\(display.omittedRows) remaining)") {
+                    displayLimit += DetailPathQuery.pageSize
+                }
+                .buttonStyle(.msActionable)
+                .font(.callout.weight(.medium))
+                .foregroundStyle(MSTheme.accent)
+            }
+
+            Text("\(min(displayLimit, filteredPaths.count)) of \(filteredPaths.count) shown · sizes are approximate")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    @ViewBuilder
+    private func groupHeader(for group: LeftoverGrouping.Group) -> some View {
+        HStack(spacing: 12) {
+            if result.supportsItemSelection {
+                Button {
+                    toggleGroup(group)
+                } label: {
+                    Image(systemName: group.isFullySelected ? "checkmark.circle.fill" : "circle")
+                        .font(.title3)
+                        .foregroundStyle(group.isFullySelected ? MSTheme.accent : Color.secondary.opacity(0.55))
+                }
+                .buttonStyle(.msActionable)
+                .accessibilityLabel(
+                    group.isFullySelected
+                        ? "Deselect all \(group.label) leftovers"
+                        : "Select all \(group.label) leftovers"
+                )
+            }
+
+            Image(systemName: "shippingbox")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(group.label)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                let pathWord = group.paths.count == 1 ? "path" : "paths"
+                Text("\(group.paths.count) \(pathWord)")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+
+            Spacer(minLength: 8)
+
+            Text(ByteCountFormatter.string(fromByteCount: group.totalBytes, countStyle: .file))
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+        .padding(.vertical, 6)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func toggleGroup(_ group: LeftoverGrouping.Group) {
+        let select = !group.isFullySelected
+        let ids = Set(group.paths.map(\.id))
+        for index in result.paths.indices where ids.contains(result.paths[index].id) {
+            result.paths[index].isSelected = select
+        }
+        result.syncCategorySelectionFromPaths()
+    }
+
     // MARK: - Cards
 
     private var whyCard: some View {
@@ -127,6 +238,43 @@ struct CategoryDetailView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+        }
+    }
+
+    /// "Why is this here?" — the orphan heuristic and its guarantees, spelled out.
+    private var orphanExplainerCard: some View {
+        MSCard {
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Why is this here?", systemImage: "questionmark.circle")
+                    .font(.subheadline.weight(.semibold))
+
+                VStack(alignment: .leading, spacing: 8) {
+                    explainerRow(
+                        "These files belong to apps that are no longer in /Applications or ~/Applications. They are grouped by the app they belonged to."
+                    )
+                    explainerRow(
+                        "Never listed: data of installed apps, Apple system files, protected folders (Documents, Desktop, keychains, browser passwords), and anything outside your home folder."
+                    )
+                    explainerRow(
+                        "Shared vendor folders (for example Google or Microsoft) are only offered when none of that vendor's apps remain."
+                    )
+                    explainerRow(
+                        "Nothing is pre-selected — leftover preferences may hold licenses or settings you want to keep for a reinstall."
+                    )
+                }
+            }
+        }
+    }
+
+    private func explainerRow(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Circle()
+                .fill(MSTheme.accent.opacity(0.5))
+                .frame(width: 5, height: 5)
+                .padding(.top, 6)
+            Text(text)
+                .font(.callout)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -279,6 +427,8 @@ struct CategoryDetailView: View {
                 } else if filteredPaths.isEmpty {
                     Text("No items match the current filters.")
                         .foregroundStyle(.secondary)
+                } else if usesGroupedList {
+                    groupedPathsList
                 } else {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(displayedPaths) { item in
@@ -297,7 +447,7 @@ struct CategoryDetailView: View {
                         .foregroundStyle(MSTheme.accent)
                     }
                     if listsIndividualItems {
-                        Text("\(min(displayLimit, filteredPaths.count)) of \(filteredPaths.count) shown · sizes include folder contents")
+                        Text("\(min(displayLimit, filteredPaths.count)) of \(filteredPaths.count) shown · sizes include folder contents · sizes are approximate")
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                     }
