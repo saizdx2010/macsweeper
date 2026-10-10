@@ -1,0 +1,46 @@
+{
+  "guides": [
+    {
+      "id": "spotlight_missing_results",
+      "symptom": "Spotlight is missing results",
+      "whenItHelps": "Searches miss files you know exist, or Spotlight seems stuck indexing after a migration or restore. Rebuilding the index can fix a corrupted one.",
+      "whenItWontHelp": "On a healthy Mac this rarely helps, and it frees no disk space. Reindexing is slow and uses CPU for a while. It won't find files in folders excluded in System Settings > Spotlight.",
+      "commands": ["sudo mdutil -E /"],
+      "needsAdmin": true
+    },
+    {
+      "id": "wrong_app_icons",
+      "symptom": "Wrong or blank app icons",
+      "whenItHelps": "Apps or files show generic, outdated or blank icons even though the app itself is fine.",
+      "whenItWontHelp": "Rarely helps on a healthy Mac and frees no disk space. If the app bundle itself has no icon, restarting changes nothing. If icons are still wrong after this, restart your Mac — that rebuilds the icon cache safely.",
+      "commands": [
+        "killall Dock; killall Finder"
+      ],
+      "needsAdmin": false
+    },
+    {
+      "id": "dns_after_vpn_change",
+      "symptom": "Websites not resolving after a VPN or DNS change",
+      "whenItHelps": "Sites fail to load or resolve to old addresses right after switching VPN, DNS servers or networks, while other devices work.",
+      "whenItWontHelp": "If your network is down, the DNS server is wrong, or the site is down, flushing the cache changes nothing. It frees no disk space.",
+      "commands": ["sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder"],
+      "needsAdmin": true
+    },
+    {
+      "id": "stale_quicklook_previews",
+      "symptom": "Stale Quick Look previews",
+      "whenItHelps": "Space-bar previews show an old version of a file or a generic thumbnail.",
+      "whenItWontHelp": "Rarely helps on a healthy Mac and frees no meaningful disk space. If a preview is blank because no previewer supports the file type, resetting the cache won't add one.",
+      "commands": ["qlmanage -r cache"],
+      "needsAdmin": false
+    },
+    {
+      "id": "finder_dock_misbehaving",
+      "symptom": "Finder or Dock misbehaving",
+      "whenItHelps": "Finder windows freeze or the Dock is unresponsive or glitchy. Both relaunch automatically.",
+      "whenItWontHelp": "Won't fix problems caused by a full disk, a misbehaving app, or a network volume that is hanging. It frees no disk space. Finder windows will close and reopen.",
+      "commands": ["killall Finder", "killall Dock"],
+      "needsAdmin": false
+    }
+  ]
+}

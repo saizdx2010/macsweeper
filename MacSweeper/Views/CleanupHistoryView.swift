@@ -18,7 +18,7 @@ struct CleanupHistoryView: View {
             StageBackground()
 
             Group {
-                if auditLog.entries.isEmpty {
+                if auditLog.entries.isEmpty && auditLog.undoMessage == nil {
                     ContentUnavailableView(
                         "No cleanup history yet",
                         systemImage: "clock",
@@ -31,12 +31,20 @@ struct CleanupHistoryView: View {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Recent cleanups")
                                         .font(.headline)
-                                    Text("Items were moved to Trash. Restore from Trash in Finder, or use Undo right after a clean.")
+                                    Text("Undo restores only the last clean’s recorded Trash items. Permanently deleted items cannot be restored.")
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
                             }
 
+                            if !auditLog.lastUndoItems.isEmpty {
+                                Button(auditLog.isRestoring ? "Restoring…" : "Undo last clean") {
+                                    Task { await auditLog.undoLastClean() }
+                                }.disabled(auditLog.isRestoring)
+                            }
+                            if let message = auditLog.undoMessage {
+                                Text(message).font(.footnote).foregroundStyle(.secondary).textSelection(.enabled)
+                            }
                             VStack(alignment: .leading, spacing: 10) {
                                 ForEach(auditLog.entries) { entry in
                                     historyRow(entry)

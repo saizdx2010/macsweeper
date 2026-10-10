@@ -141,6 +141,27 @@ actor ScanEngine {
             )
         }
 
+        if category.scan == .installerLeftovers {
+            return try InstallerLeftoverScanner.measure(
+                category: category,
+                fileManager: fileManager,
+                homeDirectory: homeDirectory,
+                deduper: &deduper
+            )
+        }
+
+        if category.scan == .staleBuildArtifacts {
+            let roots = (category.paths.map(expandHome) + extraDevRoots)
+                .filter { PathSafetyPolicy.isPathUnderHome($0, homeDirectory: homeDirectory) }
+            return try StaleProjectArtifactScanner.measure(
+                category: category,
+                roots: roots,
+                fileManager: fileManager,
+                homeDirectory: homeDirectory,
+                deduper: &deduper
+            )
+        }
+
         // Manual guidance: show when a marker path exists, even at 0 measured bytes.
         if category.risk == .manual, category.guideCommand != nil {
             return try measureManualGuide(category, deduper: &deduper)

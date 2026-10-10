@@ -72,6 +72,9 @@ struct HomeView: View {
                     }
                 }
         }
+        .onChange(of: scanSession.phase) { _, phase in
+            if phase == .finished { auditLog.finishScan(results: scanSession.results) }
+        }
         .toolbar(.visible, for: .windowToolbar)
         .onAppear {
             auditLog.applyKeepHistorySetting(settings.keepCleanupHistory)
@@ -343,6 +346,11 @@ struct HomeView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            if settings.keepCleanupHistory, let total = auditLog.lifetime, !auditLog.entries.isEmpty {
+                Text("MacSweeper has freed \(ByteCountFormatter.string(fromByteCount: total.freedBytes, countStyle: .file)) since \(total.firstDate.formatted(date: .abbreviated, time: .omitted))")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
             HStack(spacing: 16) {
                 Text(lastCleanLabel)
                     .font(.footnote)

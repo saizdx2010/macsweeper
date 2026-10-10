@@ -22,9 +22,9 @@ struct CategoryDetailView: View {
             || result.category.scan == .orphanedLeftovers
     }
 
-    /// Orphaned-app leftovers are listed in per-app groups.
+    /// Orphaned-app leftovers and installer leftovers are listed in per-app groups.
     private var usesGroupedList: Bool {
-        result.category.scan == .orphanedLeftovers
+        result.category.scan == .orphanedLeftovers || result.category.scan == .installerLeftovers
     }
 
     private var showsFilters: Bool {

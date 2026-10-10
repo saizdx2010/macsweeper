@@ -38,6 +38,83 @@ final class AuditLogService: ObservableObject {
         let itemCount: Int
     }
 
+    struct LifetimeSummary: Codable, Equatable {
+        var firstDate: Date
+        var freedBytes: Int64
+        static func aggregate(_ entries: [Entry]) -> LifetimeSummary? {
+            guard let first = entries.map(\.timestamp).min() else { return nil }
+            return LifetimeSummary(firstDate: first, freedBytes: entries.reduce(0) { $0 + max(0, $1.byteCount) })
+        }
+    }
+
+    struct ScanSnapshot: Codable, Equatable {
+        let timestamp: Date
+        let sizes: [String: Int64]
+        func change(categoryID: String, bytes: Int64) -> Int64? {
+            guard let previous = sizes[categoryID] else { return nil }
+            let delta = bytes - previous
+            return abs(delta) >= 50_000_000 ? delta : nil
+        }
+    }
+
+    @Published private(set) var lifetime: LifetimeSummary?
+    @Published private(set) var lastUndoItems: [CleanupService.MovedItem] = []
+    @Published private(set) var isRestoring = false
+    @Published private(set) var undoMessage: String?
+    @Published private(set) var scanChanges: [String: String] = [:]
+    private var previousSnapshot: ScanSnapshot?
+    private let lifetimeKey = "audit.lifetime"
+    private let undoKey = "audit.lastUndoItems"
+
+    /// Always retains just one local size snapshot, without file paths.
+    func finishScan(results: [ScanResult], date: Date = Date()) {
+        scanChanges = [:]
+        if let previousSnapshot {
+            for result in results {
+                if let delta = previousSnapshot.change(categoryID: result.category.id, bytes: result.totalBytes) {
+                    let size = ByteCountFormatter.string(fromByteCount: abs(delta), countStyle: .file)
+                    let dateLabel = previousSnapshot.timestamp.formatted(.dateTime.month(.abbreviated).day())
+                    scanChanges[result.category.id] = "\(delta > 0 ? "+" : "−")\(size) since \(dateLabel)"
+                }
+            }
+        }
+        let snapshot = ScanSnapshot(timestamp: date, sizes: Dictionary(results.map { ($0.category.id, $0.totalBytes) }, uniquingKeysWith: +))
+        previousSnapshot = snapshot
+        guard let url = logFileURL()?.deletingLastPathComponent().appendingPathComponent("last-scan.json"),
+              let data = try? JSONEncoder().encode(snapshot) else { return }
+        try? data.write(to: url, options: .atomic)
+        restrictFilePermissions(at: url)
+    }
+
+    func undoLastClean() async -> CleanupService.Outcome? {
+        guard !isRestoring, !lastUndoItems.isEmpty else { return nil }
+        isRestoring = true
+        defer { isRestoring = false }
+        do {
+            let outcome = try await CleanupService(homeDirectory: homeDirectory).restoreFromTrash(lastUndoItems)
+            let restoredPaths = Set(outcome.moved.map(\.originalPath))
+            lastUndoItems.removeAll { restoredPaths.contains($0.originalPath) }
+            entries.removeAll { entry in outcome.moved.contains { privacyPath($0.originalPath) == entry.path && privacyPath($0.trashURL.path) == entry.destination } }
+            if var total = lifetime {
+                total.freedBytes = max(0, total.freedBytes - outcome.freedBytes)
+                lifetime = total
+            }
+            undoMessage = "Restored \(outcome.itemCount) items." + (outcome.failures.isEmpty ? "" : " \(outcome.failures.count) could not be restored.\n" + outcome.failures.map { "\($0.path): \($0.message)" }.joined(separator: "\n"))
+            persistEntriesIfNeeded()
+            persistSummaryIfNeeded()
+            return outcome
+        } catch {
+            undoMessage = "Restore stopped: \(error.localizedDescription)"
+            return nil
+        }
+    }
+
+    private func persistSummaryIfNeeded() {
+        guard keepHistoryEnabled else { return }
+        defaults.set(try? JSONEncoder().encode(lifetime), forKey: lifetimeKey)
+        defaults.set(try? JSONEncoder().encode(lastUndoItems), forKey: undoKey)
+    }
+
     @Published private(set) var entries: [Entry] = []
     @Published private(set) var lastClean: SessionSummary?
 
@@ -63,6 +140,11 @@ final class AuditLogService: ObservableObject {
             )
         }
         entries = Self.loadPersistedEntries(from: defaults)
+        lifetime = defaults.data(forKey: lifetimeKey).flatMap { try? JSONDecoder().decode(LifetimeSummary.self, from: $0) } ?? LifetimeSummary.aggregate(entries)
+        lastUndoItems = defaults.data(forKey: undoKey).flatMap { try? JSONDecoder().decode([CleanupService.MovedItem].self, from: $0) } ?? []
+        if let url = logFileURL()?.deletingLastPathComponent().appendingPathComponent("last-scan.json"), let data = try? Data(contentsOf: url) {
+            previousSnapshot = try? JSONDecoder().decode(ScanSnapshot.self, from: data)
+        }
     }
 
     func record(moved items: [CleanupService.MovedItem]) {
@@ -88,6 +170,8 @@ final class AuditLogService: ObservableObject {
     }
 
     func finishClean(outcome: CleanupService.Outcome) {
+        lastUndoItems = outcome.permanentlyDeleted ? [] : outcome.moved
+        undoMessage = nil
         var items = outcome.moved
         let movedBytes = items.reduce(Int64(0)) { $0 + $1.byteCount }
         let emptiedCount = max(0, outcome.itemCount - items.count)
@@ -106,9 +190,18 @@ final class AuditLogService: ObservableObject {
             )
         }
 
-        guard !items.isEmpty else { return }
+        guard !items.isEmpty else { persistSummaryIfNeeded(); return }
 
         record(moved: items)
+        if keepHistoryEnabled {
+            if var total = lifetime {
+                total.freedBytes += max(0, outcome.freedBytes)
+                lifetime = total
+            } else {
+                lifetime = LifetimeSummary(firstDate: Date(), freedBytes: max(0, outcome.freedBytes))
+            }
+        }
+        persistSummaryIfNeeded()
 
         let summary = SessionSummary(
             date: Date(),
@@ -139,14 +232,23 @@ final class AuditLogService: ObservableObject {
 
     func clearSession() {
         entries.removeAll()
+        lifetime = nil
+        lastUndoItems = []
+        defaults.removeObject(forKey: lifetimeKey)
+        defaults.removeObject(forKey: undoKey)
         defaults.removeObject(forKey: historyKey)
     }
 
     func applyKeepHistorySetting(_ enabled: Bool) {
         keepHistoryEnabled = enabled
         if enabled {
+            if lifetime == nil { lifetime = LifetimeSummary.aggregate(entries) }
             persistEntriesIfNeeded()
+            persistSummaryIfNeeded()
         } else {
+            lifetime = nil
+            defaults.removeObject(forKey: lifetimeKey)
+            defaults.removeObject(forKey: undoKey)
             defaults.removeObject(forKey: historyKey)
             if let url = logFileURL() {
                 try? fileManager.removeItem(at: url)

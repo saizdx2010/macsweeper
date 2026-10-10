@@ -5,6 +5,7 @@ struct SettingsView: View {
     @EnvironmentObject private var auditLog: AuditLogService
     @Binding var path: NavigationPath
     @AppStorage("includeDevMode") private var includeDevMode = false
+    @State private var showTroubleshooting = false
 
     var body: some View {
         ZStack {
@@ -92,7 +93,7 @@ struct SettingsView: View {
                                     auditLog.applyKeepHistorySetting(enabled)
                                 }
 
-                            Text("Saves what moved to Trash across launches. Turn off to keep history session-only.")
+                            Text("Saves cleanup history, lifetime totals, and last-clean undo across launches. Turn off to keep history and undo session-only. One local category-size snapshot is always kept for scan comparisons; it contains no file paths.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
 
@@ -102,6 +103,11 @@ struct SettingsView: View {
                                     .foregroundStyle(MSTheme.accent)
                             }
                             .buttonStyle(.msActionable)
+
+                            Button("Troubleshooting guides…") {
+                                showTroubleshooting = true
+                            }
+                            .buttonStyle(.link)
                         }
                     }
                 }
@@ -114,6 +120,9 @@ struct SettingsView: View {
         )
         .onAppear {
             auditLog.applyKeepHistorySetting(settings.keepCleanupHistory)
+        }
+        .sheet(isPresented: $showTroubleshooting) {
+            TroubleshootingView()
         }
     }
 

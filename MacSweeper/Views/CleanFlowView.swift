@@ -307,7 +307,7 @@ struct CleanFlowView: View {
                 Text("Restored \(outcome?.itemCount ?? 0) items")
                     .font(MSTheme.displayFont)
                     .opacity(showDoneCelebration ? 1 : 0)
-                Text("Files were moved back from Trash.")
+                Text(auditLog.undoMessage ?? "Files were moved back from Trash.")
                     .foregroundStyle(.secondary)
             } else {
                 Text("Freed \(ByteCountFormatter.string(fromByteCount: outcome?.freedBytes ?? 0, countStyle: .file))")
@@ -364,6 +364,9 @@ struct CleanFlowView: View {
                 }
             }
 
+            if let errorMessage {
+                Text(errorMessage).font(.footnote).foregroundStyle(.secondary)
+            }
             HStack(spacing: 12) {
                 if !didUndo {
                     if outcome?.emptiedTrash != true || !(outcome?.moved.isEmpty ?? true) {
@@ -374,7 +377,7 @@ struct CleanFlowView: View {
 
                     if let moved = outcome?.moved, !moved.isEmpty,
                        outcome?.permanentlyDeleted != true {
-                        SecondaryCTAButton(title: "Undo", expands: false) {
+                        SecondaryCTAButton(title: "Undo last clean", expands: false) {
                             Task { await performUndo() }
                         }
                     }
@@ -446,20 +449,18 @@ struct CleanFlowView: View {
     }
 
     private func performUndo() async {
-        guard let moved = outcome?.moved, !moved.isEmpty else { return }
+        guard !auditLog.lastUndoItems.isEmpty else { return }
         isRestoring = true
         phase = .working
         defer { isRestoring = false }
 
-        do {
-            let restored = try await cleanup.restoreFromTrash(moved)
+        if let restored = await auditLog.undoLastClean() {
             outcome = restored
-            didUndo = restored.itemCount > 0
-            phase = .done
-        } catch {
-            errorMessage = error.localizedDescription
-            phase = .done
+            didUndo = true
+        } else {
+            errorMessage = auditLog.undoMessage
         }
+        phase = .done
     }
 
     private func openTrash() {

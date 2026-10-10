@@ -142,8 +142,8 @@ enum RuleCoverage {
                     )
                 }
 
-            case .orphanedLeftovers:
-                // Orphan hits are computed live (which bundle IDs are gone);
+            case .orphanedLeftovers, .installerLeftovers, .staleBuildArtifacts:
+                // Orphan/installer/stale-artifact hits are computed live;
                 // live scan results cover them, so there is no static index.
                 continue
             }

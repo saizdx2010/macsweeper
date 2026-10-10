@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ScanResultsView: View {
+    @EnvironmentObject private var auditLog: AuditLogService
     @ObservedObject var session: ScanSession
     let includeDevMode: Bool
     @Binding var path: NavigationPath
@@ -215,6 +216,7 @@ struct ScanResultsView: View {
                 .padding(.leading, 4)
 
             ForEach(Array(indices.enumerated()), id: \.element) { offset, index in
+                VStack(alignment: .leading, spacing: 4) {
                 CategoryCardRow(
                     result: $session.results[index],
                     showsSelection: true,
@@ -223,6 +225,10 @@ struct ScanResultsView: View {
                         path.append(AppRoute.detail(categoryID: session.results[index].category.id))
                     }
                 )
+                if let change = auditLog.scanChanges[session.results[index].category.id] {
+                    Text(change).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 16)
+                }
+                }
                 .opacity(cardsVisible ? 1 : 0)
                 .offset(y: cardsVisible ? 0 : 8)
                 .animation(
@@ -260,6 +266,6 @@ struct ScanResultsView: View {
             session: ScanSession(),
             includeDevMode: false,
             path: .constant(NavigationPath())
-        )
+        ).environmentObject(AuditLogService())
     }
 }

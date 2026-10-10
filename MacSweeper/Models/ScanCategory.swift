@@ -16,6 +16,10 @@ enum ScanStrategy: String, Codable, Hashable {
     case unusedApps = "unused_apps"
     /// Library files left behind by apps that are no longer installed.
     case orphanedLeftovers = "orphaned_leftovers"
+    /// Installers in Downloads whose app is already installed.
+    case installerLeftovers = "installer_leftovers"
+    /// Build artifacts of projects inactive for `min_age_days` (Dev mode).
+    case staleBuildArtifacts = "stale_build_artifacts"
 }
 
 /// A cleanup rule loaded from `cleanup-rules.json`.

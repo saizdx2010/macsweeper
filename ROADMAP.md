@@ -3,7 +3,7 @@
 Where MacSweeper goes next — version by version. For the full product spec (vision, safety model, architecture), see [PRODUCT.md](PRODUCT.md). For build/test/release instructions, see [README.md](README.md).
 
 - **Current release:** v1.2.0 (`MARKETING_VERSION` in [project.yml](project.yml))
-- **Last updated:** 2026-09-04
+- **Last updated:** 2026-10-10
 - **Ordering, not dates:** releases are ordered by priority; no calendar promises.
 
 ## Status legend
@@ -134,6 +134,36 @@ The complete scan → preview → clean loop, shipped and notarized:
 - [ ] Dynamic Type / text sizing check
 - [ ] Localization scaffold + first locales (e.g. de, es, fr, ja, pt-BR, zh-Hans) — strings extracted from code
 - [ ] Localize risk labels and safety copy with extra care (these are the trust contract)
+
+## ✅ v1.7.0 — Reclaim+: smarter finds, scan diff, undo
+
+**Goal:** surface the big, obvious wins users miss today, explain *why* the disk grew, and make Trash-mode cleans reversible in one click.
+
+- [x] **Installer leftovers** — `.dmg` / `.pkg` / installer `.zip` in `~/Downloads` whose app is already installed (Moderate; checked only on confident match)
+- [x] **Inactive project build artifacts** (Dev mode) — `.next`, `dist`, `build`, `.turbo`, `.parcel-cache`, `__pycache__`, `.tox`, `.pytest_cache`, `.mypy_cache`, project `.gradle`; only for projects untouched 90+ days (Moderate, unchecked)
+- [x] **AI/ML model caches** (Dev mode) — Hugging Face, Ollama, LM Studio, torch (Moderate, unchecked)
+- [x] **More app caches** — Cursor + VS Code extension caches, AVD images (Risky); Teams/Notion/Figma were already covered
+- [x] **Manual guides** — Messages attachments (size + System Settings path), simulator runtimes (`xcrun simctl runtime …`, copy-only)
+- [x] **Since-last-scan diff** — per-category "+1.8 GB since Sep 4" on results (shown when Δ ≥ 50 MB)
+- [x] **Lifetime freed total** — "MacSweeper has freed 48 GB since …" on Home, from history
+- [x] **Undo last clean** — when Delete immediately is off, restore the last clean's items from Trash (only those items; partial restores reported honestly)
+- [x] Safety tests for every new scanner (exclusions, home-only, inactivity threshold, name matching)
+- [ ] Android Studio caches — versioned folder names (`AndroidStudio2024.x`) need glob support in rules
+
+## 📅 v1.8.0 — Duplicate finder (read-only)
+
+- [ ] Group duplicate files under non-excluded home folders (size → partial hash → full hash)
+- [ ] Never auto-selected; Reveal in Finder + per-file selection, keep-newest hint
+- [ ] Cancellable, off-main-thread, APFS clone-aware (clones aren't "wasted" space)
+
+## ✅ Troubleshooting guides (rides with v1.7.0)
+
+**Goal:** answer "my Mac is acting weird" honestly — without becoming an "optimizer". Inspired by Mole's `mo optimize`, deliberately reshaped: MacSweeper never runs these, never uses `sudo`, never claims a speed-up.
+
+- [x] Symptom-first guides: Spotlight missing results, wrong/blank icons, DNS after VPN changes, stale QuickLook previews, Finder/Dock misbehaving
+- [x] Each guide: when it helps, when it won't, copyable command(s), "needs admin password" badge
+- [x] Bundled `troubleshooting-guides.json`; reachable from a secondary link, not the main flow
+- 🚫 Still out: DNS flush / reindex / DB vacuum *run by the app*, RAM/CPU "diagnosis", disk verify
 
 ---
 

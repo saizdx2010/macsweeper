@@ -22,7 +22,7 @@ enum RunningAppSafety {
 /// Moves selected scan results to Trash (never permanent delete, except Empty Trash
 /// and items explicitly removed when `deleteImmediately` is requested).
 actor CleanupService {
-    struct MovedItem: Equatable, Identifiable, Sendable {
+    struct MovedItem: Equatable, Identifiable, Sendable, Codable {
         var id: String { originalPath }
         let categoryID: String
         let categoryLabel: String?
@@ -302,6 +302,11 @@ actor CleanupService {
 
             let destination = URL(fileURLWithPath: item.originalPath)
             let parent = destination.deletingLastPathComponent()
+            // A dangling symlink also occupies the original path.
+            if (try? fileManager.attributesOfItem(atPath: destination.path)) != nil {
+                failures.append(Failure(path: item.originalPath, message: "Original path already exists."))
+                continue
+            }
 
             do {
                 if !fileManager.fileExists(atPath: parent.path) {
