@@ -1,12 +1,41 @@
 import SwiftUI
 import AppKit
 
-/// Light, airy MacSweeper design tokens.
+/// Colorful but restrained MacSweeper design tokens.
 enum MSTheme {
-    /// Calm teal-blue brand accent (not system purple).
-    static let accent = Color(red: 0.12, green: 0.55, blue: 0.62)
+    /// Teal brand accent; anchors the brand gradient.
+    static let accent = Color(red: 0.05, green: 0.62, blue: 0.70)
+    /// Second and third brand stops (indigo → violet).
+    static let accentIndigo = Color(red: 0.31, green: 0.36, blue: 0.95)
+    static let accentViolet = Color(red: 0.62, green: 0.33, blue: 0.96)
     /// Warm amber when disk pressure is high (≥85% used).
-    static let pressure = Color(red: 0.82, green: 0.48, blue: 0.18)
+    static let pressure = Color(red: 0.95, green: 0.52, blue: 0.16)
+
+    static let brandColors: [Color] = [accent, accentIndigo, accentViolet]
+    static let pressureColors: [Color] = [pressure, Color(red: 0.93, green: 0.27, blue: 0.33)]
+
+    static var brandGradient: LinearGradient {
+        LinearGradient(colors: brandColors, startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
+    /// Distinct category hues; each category keeps the same color across screens.
+    static let categoryPalette: [Color] = [
+        Color(red: 0.05, green: 0.62, blue: 0.70), // teal
+        Color(red: 0.31, green: 0.36, blue: 0.95), // indigo
+        Color(red: 0.62, green: 0.33, blue: 0.96), // violet
+        Color(red: 0.95, green: 0.36, blue: 0.62), // pink
+        Color(red: 0.98, green: 0.55, blue: 0.20), // orange
+        Color(red: 0.20, green: 0.70, blue: 0.40), // green
+        Color(red: 0.13, green: 0.55, blue: 0.95), // blue
+        Color(red: 0.90, green: 0.70, blue: 0.10), // gold
+    ]
+
+    /// Stable (non-randomized) hash so a category's color never changes between launches.
+    static func color(forCategoryID id: String) -> Color {
+        var hash: UInt32 = 5381
+        for byte in id.utf8 { hash = (hash &* 33) &+ UInt32(byte) }
+        return categoryPalette[Int(hash % UInt32(categoryPalette.count))]
+    }
 
     static let canvas = Color(nsColor: .windowBackgroundColor)
     static let cardFill = Color(nsColor: .controlBackgroundColor)
@@ -28,24 +57,55 @@ enum MSTheme {
     static let metaFont = Font.caption
 }
 
-/// Soft radial wash behind hero / theater screens.
+/// Soft, slowly drifting color wash behind hero / theater screens.
 struct StageBackground: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var drift = false
+
+    private var blobOpacity: Double { colorScheme == .dark ? 0.16 : 0.10 }
+
     var body: some View {
-        ZStack {
-            MSTheme.canvas
-            RadialGradient(
-                colors: [
-                    MSTheme.accent.opacity(0.12),
-                    MSTheme.accent.opacity(0.04),
-                    .clear
-                ],
-                center: .top,
-                startRadius: 20,
-                endRadius: 420
-            )
-            .blendMode(.normal)
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            ZStack {
+                MSTheme.canvas
+                blob(MSTheme.accent, size: w * 0.7)
+                    .offset(x: drift ? -w * 0.30 : -w * 0.18, y: drift ? -h * 0.32 : -h * 0.22)
+                blob(MSTheme.accentViolet, size: w * 0.6)
+                    .offset(x: drift ? w * 0.28 : w * 0.36, y: drift ? -h * 0.18 : -h * 0.30)
+            }
+            .frame(width: w, height: h)
+            .clipped()
         }
         .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 16).repeatForever(autoreverses: true)) {
+                drift = true
+            }
+        }
+    }
+
+    private func blob(_ color: Color, size: CGFloat) -> some View {
+        Circle()
+            .fill(color.opacity(blobOpacity))
+            .frame(width: size, height: size)
+            .blur(radius: size * 0.22)
+    }
+}
+
+/// Text filled with the brand gradient.
+struct GradientText: View {
+    let text: String
+    var font: Font = MSTheme.wordmarkFont
+
+    var body: some View {
+        Text(text)
+            .font(font)
+            .foregroundStyle(MSTheme.brandGradient)
     }
 }
 
@@ -62,7 +122,7 @@ struct MSCard<Content: View>: View {
                 RoundedRectangle(cornerRadius: MSTheme.cardRadius, style: .continuous)
                     .stroke(MSTheme.cardStroke, lineWidth: 1)
             )
-            .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
+            .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
     }
 }
 
@@ -133,14 +193,14 @@ private struct MSPrimaryCTAButtonBody: View {
             .foregroundStyle(.white)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(fillColor)
+                    .fill(MSTheme.brandGradient)
+                    .opacity(fillOpacity)
             )
-            .scaleEffect(configuration.isPressed ? 0.98 : (isHovered && isEnabled ? 1.015 : 1))
-            .opacity(configuration.isPressed ? 0.9 : 1)
+            .scaleEffect(configuration.isPressed ? 0.98 : (isHovered && isEnabled ? 1.01 : 1))
             .shadow(
-                color: MSTheme.accent.opacity(isHovered && isEnabled ? 0.28 : 0),
-                radius: isHovered && isEnabled ? 10 : 0,
-                y: isHovered && isEnabled ? 3 : 0
+                color: MSTheme.accentIndigo.opacity(isHovered && isEnabled ? 0.25 : 0),
+                radius: 8,
+                y: 3
             )
             .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .onHover { hovering in
@@ -158,11 +218,9 @@ private struct MSPrimaryCTAButtonBody: View {
             .animation(.easeOut(duration: 0.08), value: configuration.isPressed)
     }
 
-    private var fillColor: Color {
-        guard isEnabled else { return MSTheme.accent.opacity(0.35) }
-        if configuration.isPressed { return MSTheme.accent.opacity(0.88) }
-        if isHovered { return MSTheme.accent.opacity(0.92) }
-        return MSTheme.accent
+    private var fillOpacity: Double {
+        guard isEnabled else { return 0.35 }
+        return configuration.isPressed ? 0.85 : 1
     }
 }
 

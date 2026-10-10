@@ -57,12 +57,7 @@ struct CategoryCardRow: View {
     }
 
     private var iconTile: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(MSTheme.accent.opacity(0.12))
-                .frame(width: 40, height: 40)
-            CategoryIcon(category: result.category, pointSize: 18)
-        }
+        CategoryIconTile(category: result.category)
     }
 
     @ViewBuilder
@@ -117,12 +112,7 @@ struct CategorySummaryCard: View {
     var body: some View {
         MSCard {
             HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(MSTheme.accent.opacity(0.12))
-                        .frame(width: 40, height: 40)
-                    CategoryIcon(category: result.category, pointSize: 18)
-                }
+                CategoryIconTile(category: result.category)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(result.category.label)

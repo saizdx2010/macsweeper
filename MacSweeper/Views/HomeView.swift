@@ -83,23 +83,7 @@ struct HomeView: View {
             StageBackground()
 
             VStack(spacing: 0) {
-                HStack {
-                    Spacer()
-                    Button {
-                        path.append(AppRoute.settings)
-                    } label: {
-                        Image(systemName: "gearshape")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.msActionable)
-                    .help("Settings")
-                    .accessibilityLabel("Settings")
-                }
-
-                Text("MacSweeper")
-                    .font(MSTheme.wordmarkFont)
-                    .foregroundStyle(.primary)
+                GradientText(text: "MacSweeper")
                     .frame(maxWidth: .infinity)
                     .padding(.top, 4)
 
@@ -125,6 +109,20 @@ struct HomeView: View {
         }
         .frame(minWidth: 640, minHeight: 480)
         .navigationBarBackButtonHidden(true)
+        // The wordmark already names the app; keep the bar empty and see-through.
+        .navigationTitle("")
+        .toolbarBackground(.hidden, for: .windowToolbar)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    path.append(AppRoute.settings)
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .help("Settings")
+                .accessibilityLabel("Settings")
+            }
+        }
         .task {
             refreshHomeState()
             withAnimation(.easeOut(duration: 0.8)) {
@@ -168,7 +166,7 @@ struct HomeView: View {
             usedFraction: ringDrawn ? (snapshot?.usedFraction ?? 0) : 0,
             lineWidth: MSTheme.homeRingLineWidth,
             size: MSTheme.homeRingSize,
-            progressColor: isDiskUnderPressure ? MSTheme.pressure : MSTheme.accent
+            progressColors: isDiskUnderPressure ? MSTheme.pressureColors : MSTheme.brandColors
         ) {
             if let snapshot {
                 VStack(spacing: 4) {
@@ -256,19 +254,13 @@ struct HomeView: View {
                 .font(.headline)
                 .foregroundStyle(.primary)
 
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: 16) {
-                    ForEach(coverageColumns) { column in
-                        coverageColumnView(column)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(coverageColumns) { column in
-                        coverageColumnView(column)
-                    }
+            // Window min width keeps three columns readable; no stacked fallback needed.
+            HStack(alignment: .top, spacing: 12) {
+                ForEach(coverageColumns) { column in
+                    coverageColumnView(column)
                 }
             }
+            .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -278,16 +270,22 @@ struct HomeView: View {
             CoverageColumn(
                 id: "safe",
                 title: "Safe",
+                symbol: "sparkles",
+                tint: MSTheme.categoryPalette[5],
                 blurb: "Caches, logs, Slack, Zoom, Discord"
             ),
             CoverageColumn(
                 id: "review",
                 title: "Review",
+                symbol: "eye",
+                tint: MSTheme.categoryPalette[4],
                 blurb: "Downloads, Mail, Xcode leftovers"
             ),
             CoverageColumn(
                 id: "manual",
                 title: "Manual",
+                symbol: "terminal",
+                tint: MSTheme.accentIndigo,
                 blurb: manualCoverageBlurb
             ),
         ]
@@ -301,18 +299,32 @@ struct HomeView: View {
     }
 
     private func coverageColumnView(_ column: CoverageColumn) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(column.title)
-                .font(.body.weight(.medium))
-                .foregroundStyle(.primary)
+        VStack(alignment: .leading, spacing: 6) {
+            Label {
+                Text(column.title)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary)
+            } icon: {
+                Image(systemName: column.symbol)
+                    .foregroundStyle(column.tint)
+            }
             Text(column.blurb)
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
-                .lineLimit(2)
+                .lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(
+            column.tint.opacity(0.06),
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(column.tint.opacity(0.18), lineWidth: 1)
+        )
     }
 
     // MARK: - Footer
@@ -324,6 +336,7 @@ struct HomeView: View {
 
             Toggle("Include Dev mode", isOn: $includeDevMode)
                 .toggleStyle(.switch)
+                .tint(MSTheme.accentIndigo)
 
             Text(devModeCaption)
                 .font(.footnote)
@@ -401,6 +414,8 @@ struct HomeView: View {
 private struct CoverageColumn: Identifiable {
     let id: String
     let title: String
+    let symbol: String
+    let tint: Color
     let blurb: String
 }
 

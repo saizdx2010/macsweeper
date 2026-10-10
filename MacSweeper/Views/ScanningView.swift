@@ -24,8 +24,7 @@ struct ScanningView: View {
                 DiskRingView(
                     usedFraction: ringDrawn ? session.progressFraction : 0,
                     lineWidth: MSTheme.heroRingLineWidth,
-                    size: MSTheme.heroRingSize,
-                    progressColor: MSTheme.accent
+                    size: MSTheme.heroRingSize
                 ) {
                     VStack(spacing: 6) {
                         Text(progressLabel)

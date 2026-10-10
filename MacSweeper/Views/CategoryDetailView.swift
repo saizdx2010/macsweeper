@@ -219,12 +219,7 @@ struct CategoryDetailView: View {
     private var whyCard: some View {
         MSCard {
             HStack(alignment: .top, spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(MSTheme.accent.opacity(0.12))
-                        .frame(width: 52, height: 52)
-                    CategoryIcon(category: result.category, pointSize: 22)
-                }
+                CategoryIconTile(category: result.category, size: 52)
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {

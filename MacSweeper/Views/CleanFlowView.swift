@@ -290,18 +290,18 @@ struct CleanFlowView: View {
 
             ZStack {
                 Circle()
-                    .fill(MSTheme.accent.opacity(0.12))
-                    .frame(width: 96, height: 96)
-                    .scaleEffect(showDoneCelebration ? 1 : 0.7)
+                    .fill(MSTheme.brandGradient)
+                    .frame(width: 88, height: 88)
+                    .scaleEffect(showDoneCelebration ? 1 : 0.85)
                     .opacity(showDoneCelebration ? 1 : 0)
 
-                Image(systemName: didUndo ? "arrow.uturn.backward.circle.fill" : "checkmark.circle.fill")
-                    .font(.system(size: 56))
-                    .foregroundStyle(MSTheme.accent)
-                    .symbolRenderingMode(.hierarchical)
-                    .scaleEffect(showDoneCelebration ? 1 : 0.7)
+                Image(systemName: didUndo ? "arrow.uturn.backward" : "checkmark")
+                    .font(.system(size: 38, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .scaleEffect(showDoneCelebration ? 1 : 0.85)
                     .opacity(showDoneCelebration ? 1 : 0)
             }
+            .animation(.easeOut(duration: 0.35), value: showDoneCelebration)
 
             if didUndo {
                 Text("Restored \(outcome?.itemCount ?? 0) items")

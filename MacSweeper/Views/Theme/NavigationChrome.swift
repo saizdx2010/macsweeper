@@ -29,6 +29,7 @@ struct AppDestinationChrome: ViewModifier {
             // Always use our explicit Back — system back is unreliable with custom toolbars on macOS.
             .navigationBarBackButtonHidden(true)
             .toolbar(.visible, for: .windowToolbar)
+            .toolbarBackground(.hidden, for: .windowToolbar)
             .toolbar {
                 if showsBack {
                     ToolbarItem(placement: .navigation) {
