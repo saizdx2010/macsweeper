@@ -547,6 +547,7 @@
     <div class="s-head"><b>05</b><h2>Decisions needed</h2><p>Reply with e.g. "B, icon 2, tinted tiles"</p></div>
     <div class="pick">
       <ol>
+        <li><b>Chosen 2026-10-30:</b> B Focus shell + A's hairline rows inside the results sheet · app icon 1 Sweep · tinted tiles.</li>
         <li><b>Direction:</b> A Calm · B Focus · C Instrument · D Paper (mixing is fine, e.g. "B's home + A's results table").</li>
         <li><b>App icon:</b> 1 Sweep · 2 Graphite · 3 Swoosh · 4 Platter.</li>
         <li><b>Category icon treatment:</b> tinted tiles (A, B) or plain monochrome lines (C, D).</li>
@@ -605,9 +606,10 @@
   const SQ = `M100 285C100 183 183 100 285 100H739C841 100 924 183 924 285V739C924 841 841 924 739 924H285C183 924 100 841 100 739Z`;
   const ICONS = [
     ["Sweep", "A light tile. One teal arc sweeps three-quarters of the disk and ends in a sparkle. Calm and friendly; pairs with A and B.",
-     `<defs><linearGradient id="a1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e3eeec"/></linearGradient>
+     `<defs><linearGradient id="a1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d6e9e5"/></linearGradient>
+        <filter id="a1f" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0b3d37" flood-opacity=".28"/></filter>
         <linearGradient id="a1s" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#0b8f80"/><stop offset="1" stop-color="#34d3b8"/></linearGradient></defs>
-      <path d="${SQ}" fill="url(#a1)"/><path d="${SQ}" fill="none" stroke="#000" stroke-opacity=".06" stroke-width="4"/>
+      <path d="${SQ}" fill="url(#a1)" filter="url(#a1f)"/><path d="${SQ}" fill="none" stroke="#0b6f64" stroke-opacity=".22" stroke-width="6"/>
       <circle cx="512" cy="530" r="232" fill="none" stroke="#dbe7e5" stroke-width="64"/>
       <path d="M280 530A232 232 0 1 1 512 762" fill="none" stroke="url(#a1s)" stroke-width="64" stroke-linecap="round"/>
       <path d="M780 188c9 48 26 65 74 74-48 9-65 26-74 74-9-48-26-65-74-74 48-9 65-26 74-74z" fill="#0e9f8e"/>`],

@@ -19,6 +19,7 @@ struct CleanFlowView: View {
     @State private var cleanProgress: CleanupService.Progress?
     @State private var freeSpaceBeforeClean: Int64?
     @State private var observedGainBytes: Int64?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let cleanup = CleanupService()
     private let diskSpace = DiskSpaceService()
@@ -209,10 +210,8 @@ struct CleanFlowView: View {
                     Text(confirmHeadline)
                         .font(MSTheme.titleFont)
 
-                    VStack(spacing: 10) {
-                        ForEach(results) { result in
-                            CategorySummaryCard(result: result)
-                        }
+                    MSGroupedRows(items: results) { _, result in
+                        CategorySummaryRow(result: result)
                     }
 
                     Text(confirmFootnote)
@@ -223,16 +222,16 @@ struct CleanFlowView: View {
             }
 
             VStack(spacing: 0) {
-                Divider().opacity(0.5)
+                Rectangle().fill(MSTheme.hairline).frame(height: 1)
                 HStack(spacing: 12) {
                     SecondaryCTAButton(title: "Cancel", expands: false) {
                         AppNavigation.popLast($navigationPath)
                     }
                     Spacer()
-                    PrimaryCTAButton(title: primaryActionTitle, isEnabled: !results.isEmpty) {
+                    PrimaryCTAButton(title: primaryActionTitle, icon: .clean, isEnabled: !results.isEmpty, expands: false) {
                         requestClean()
                     }
-                    .frame(maxWidth: 240)
+                    .keyboardShortcut(.return, modifiers: .command)
                 }
                 .padding(.horizontal, MSTheme.pagePadding)
                 .padding(.vertical, 14)
@@ -242,9 +241,14 @@ struct CleanFlowView: View {
 
     private var workingView: some View {
         VStack(spacing: 20) {
-            ProgressView()
-                .controlSize(.large)
-                .tint(MSTheme.accent)
+            ScanSweepRing(progress: workingFraction, size: 150) {
+                Text(workingPercent)
+                    .font(.system(size: 26, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(MSMotion.fast, value: workingPercent)
+            }
+            .animation(MSMotion.base, value: workingFraction)
             Text(workingLabel)
                 .font(MSTheme.titleFont)
                 .multilineTextAlignment(.center)
@@ -256,6 +260,16 @@ struct CleanFlowView: View {
                 .animation(.easeInOut(duration: 0.2), value: cleanProgress?.current)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var workingFraction: Double {
+        guard let progress = cleanProgress, progress.total > 0 else { return 0 }
+        return Double(progress.current) / Double(progress.total)
+    }
+
+    private var workingPercent: String {
+        guard cleanProgress != nil else { return "…" }
+        return "\(Int((workingFraction * 100).rounded()))%"
     }
 
     private var primaryActionTitle: String {
@@ -288,20 +302,7 @@ struct CleanFlowView: View {
         VStack(spacing: 20) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(MSTheme.brandGradient)
-                    .frame(width: 88, height: 88)
-                    .scaleEffect(showDoneCelebration ? 1 : 0.85)
-                    .opacity(showDoneCelebration ? 1 : 0)
-
-                Image(systemName: didUndo ? "arrow.uturn.backward" : "checkmark")
-                    .font(.system(size: 38, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .scaleEffect(showDoneCelebration ? 1 : 0.85)
-                    .opacity(showDoneCelebration ? 1 : 0)
-            }
-            .animation(.easeOut(duration: 0.35), value: showDoneCelebration)
+            DoneCheckView(isUndo: didUndo)
 
             if didUndo {
                 Text("Restored \(outcome?.itemCount ?? 0) items")
@@ -310,10 +311,13 @@ struct CleanFlowView: View {
                 Text(auditLog.undoMessage ?? "Files were moved back from Trash.")
                     .foregroundStyle(.secondary)
             } else {
-                Text("Freed \(ByteCountFormatter.string(fromByteCount: outcome?.freedBytes ?? 0, countStyle: .file))")
-                    .font(MSTheme.displayFont)
-                    .monospacedDigit()
-                    .opacity(showDoneCelebration ? 1 : 0)
+                CountingBytesText(
+                    bytes: showDoneCelebration ? Double(outcome?.freedBytes ?? 0) : 0,
+                    prefix: "Freed "
+                )
+                .font(MSTheme.displayFont)
+                .opacity(showDoneCelebration ? 1 : 0)
+                .accessibilityLabel("Freed \(ByteCountFormatter.string(fromByteCount: outcome?.freedBytes ?? 0, countStyle: .file))")
 
                 if let gain = observedGainBytes, gain > 0 {
                     Text("Finder now shows about +\(ByteCountFormatter.string(fromByteCount: gain, countStyle: .file)) free")
@@ -340,7 +344,7 @@ struct CleanFlowView: View {
                 if let failures = outcome?.failures, !failures.isEmpty {
                     Text("\(failures.count) item\(failures.count == 1 ? "" : "s") could not be cleaned.")
                         .font(.footnote)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(MSTheme.warning)
                 }
 
                 if outcome?.permanentlyDeleted == true && outcome?.emptiedTrash != true {
@@ -386,6 +390,7 @@ struct CleanFlowView: View {
                 PrimaryCTAButton(title: "Done", expands: false) {
                     dismissToHome()
                 }
+                .keyboardShortcut(.defaultAction)
             }
 
             Spacer()
@@ -394,13 +399,13 @@ struct CleanFlowView: View {
         .padding(MSTheme.pagePadding)
         .onAppear {
             showDoneCelebration = false
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.78)) {
+            withAnimation(MSMotion.resolve(.smooth(duration: 1.1), reduceMotion: reduceMotion).delay(0.3)) {
                 showDoneCelebration = true
             }
         }
         .onChange(of: didUndo) { _, _ in
             showDoneCelebration = false
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.78)) {
+            withAnimation(MSMotion.resolve(.smooth(duration: 1.1), reduceMotion: reduceMotion).delay(0.3)) {
                 showDoneCelebration = true
             }
         }

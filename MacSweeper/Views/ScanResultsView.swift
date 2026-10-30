@@ -7,8 +7,8 @@ struct ScanResultsView: View {
     @Binding var path: NavigationPath
 
     @AppStorage("includeDevMode") private var includeDevModeStorage = false
-    @AppStorage("didSeeResultsTip") private var didSeeResultsTip = false
     @State private var cardsVisible = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var selectedBytes: Int64 { session.selectedBytes }
     private var totalBytes: Int64 { session.totalBytes }
@@ -22,20 +22,10 @@ struct ScanResultsView: View {
     var body: some View {
         ZStack {
             StageBackground()
-
-            VStack(spacing: 0) {
-                content
-
-                if hasListContent {
-                    footerBar
-                }
-            }
+            content
         }
         .appDestinationChrome(
             title: "Results",
-            subtitle: hasListContent
-                ? "Selected \(ByteCountFormatter.string(fromByteCount: selectedBytes, countStyle: .file))"
-                : nil,
             onBack: { AppNavigation.popToRoot($path) }
         )
         .toolbar {
@@ -64,7 +54,7 @@ struct ScanResultsView: View {
             }
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 0.35).delay(0.05)) {
+            withAnimation(MSMotion.resolve(MSMotion.base, reduceMotion: reduceMotion).delay(0.05)) {
                 cardsVisible = true
             }
         }
@@ -96,29 +86,7 @@ struct ScanResultsView: View {
                 description: "Checked \(session.loadedRuleCount) rules under your home folder. Nothing matched with measurable size."
             )
         default:
-            ScrollView {
-                VStack(alignment: .leading, spacing: MSTheme.sectionSpacing) {
-                    headerBand
-                        .opacity(cardsVisible ? 1 : 0)
-
-                    if !didSeeResultsTip {
-                        tipBanner
-                    }
-
-                    if !session.coreIndices.isEmpty {
-                        section(title: "Reclaimable", indices: session.coreIndices)
-                    }
-
-                    if !session.devIndices.isEmpty {
-                        section(title: "Dev", indices: session.devIndices)
-                    }
-
-                    Text("Sizes are approximate (allocated disk use; hard links counted once).")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-                .padding(MSTheme.pagePadding)
-            }
+            resultsPanel
         }
     }
 
@@ -153,111 +121,133 @@ struct ScanResultsView: View {
         .padding(MSTheme.pagePadding)
     }
 
-    private var tipBanner: some View {
-        MSCard {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "lightbulb")
-                    .foregroundStyle(MSTheme.accent)
-                    .accessibilityHidden(true)
+    // MARK: - Results sheet
 
-                Text("Safe items are checked; expand a row to review paths.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+    private var resultsPanel: some View {
+        VStack(spacing: 0) {
+            panelHeader
+                .padding(.horizontal, 22)
+                .padding(.top, 18)
+                .padding(.bottom, 14)
 
-                Button {
-                    didSeeResultsTip = true
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.msActionable)
-                .accessibilityLabel("Dismiss tip")
-            }
-        }
-    }
+            Rectangle().fill(MSTheme.hairline).frame(height: 1)
 
-    private var headerBand: some View {
-        MSCard {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Found")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file))
-                        .font(.system(size: 28, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                    Text("approximate · shared files counted once")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    ForEach(groups) { group in
+                        groupSection(group)
+                    }
+
+                    Text("Sizes are approximate: allocated disk use, hard links counted once.")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Selected")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(ByteCountFormatter.string(fromByteCount: selectedBytes, countStyle: .file))
-                        .font(.title3.weight(.semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(MSTheme.accent)
-                        .contentTransition(.numericText())
-                        .animation(.snappy(duration: 0.2), value: selectedBytes)
-                }
+                .padding(22)
             }
+        }
+        .background(
+            UnevenRoundedRectangle(topLeadingRadius: 18, topTrailingRadius: 18, style: .continuous)
+                .fill(MSTheme.cardFill)
+                .shadow(color: .black.opacity(0.10), radius: 18, y: -2)
+                .ignoresSafeArea(edges: .bottom)
+        )
+        .padding(.horizontal, 18)
+        .padding(.top, 6)
+        .offset(y: cardsVisible || reduceMotion ? 0 : 40)
+        .opacity(cardsVisible ? 1 : 0)
+    }
+
+    private var panelHeader: some View {
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    CountingBytesText(bytes: cardsVisible ? Double(totalBytes) : 0)
+                        .font(.system(size: 26, weight: .semibold, design: .rounded))
+                    Text("found")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                }
+                .animation(MSMotion.resolve(MSMotion.slow, reduceMotion: reduceMotion), value: cardsVisible)
+
+                Text("\(ByteCountFormatter.string(fromByteCount: selectedBytes, countStyle: .file)) selected")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(MSMotion.fast, value: selectedBytes)
+            }
+
+            Spacer(minLength: 12)
+
+            PrimaryCTANavigationLink(
+                title: cleanButtonTitle,
+                value: AppRoute.clean(session.selectedResults),
+                icon: .clean,
+                isEnabled: !session.selectedResults.isEmpty,
+                expands: false
+            )
+            .keyboardShortcut(.return, modifiers: .command)
         }
     }
 
-    private func section(title: String, indices: [Int]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title.uppercased())
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.leading, 4)
+    private func groupSection(_ group: ResultGroup) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            MSSectionHeader(
+                title: group.title,
+                trailing: ByteCountFormatter.string(fromByteCount: group.indices.reduce(0) { $0 + session.results[$1].totalBytes }, countStyle: .file)
+            )
+            .padding(.horizontal, 4)
 
-            ForEach(Array(indices.enumerated()), id: \.element) { offset, index in
-                VStack(alignment: .leading, spacing: 4) {
-                CategoryCardRow(
-                    result: $session.results[index],
-                    showsSelection: true,
-                    showsChevron: true,
+            MSGroupedRows(items: group.indices.map(IndexedRow.init)) { offset, row in
+                CategoryListRow(
+                    result: $session.results[row.index],
+                    change: auditLog.scanChanges[session.results[row.index].category.id],
                     onDetails: {
-                        path.append(AppRoute.detail(categoryID: session.results[index].category.id))
+                        path.append(AppRoute.detail(categoryID: session.results[row.index].category.id))
                     }
                 )
-                if let change = auditLog.scanChanges[session.results[index].category.id] {
-                    Text(change).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 16)
-                }
-                }
                 .opacity(cardsVisible ? 1 : 0)
-                .offset(y: cardsVisible ? 0 : 8)
-                .animation(
-                    .easeOut(duration: 0.3).delay(Double(offset) * 0.03),
-                    value: cardsVisible
-                )
+                .offset(y: cardsVisible || reduceMotion ? 0 : 8)
+                .animation(rowAnimation(group.startOffset + offset), value: cardsVisible)
             }
         }
     }
 
-    private var footerBar: some View {
-        VStack(spacing: 0) {
-            Divider().opacity(0.5)
-            HStack {
-                Spacer(minLength: 8)
+    /// Stagger only the first few rows overall; the rest appear together.
+    private func rowAnimation(_ position: Int) -> Animation {
+        let delay = Double(min(position, MSMotion.staggerLimit)) * MSMotion.stagger
+        return MSMotion.resolve(MSMotion.base, reduceMotion: reduceMotion).delay(delay + 0.1)
+    }
 
-                PrimaryCTANavigationLink(
-                    title: cleanButtonTitle,
-                    value: AppRoute.clean(session.selectedResults),
-                    isEnabled: !session.selectedResults.isEmpty
-                )
-                .frame(maxWidth: 240)
-                .keyboardShortcut(.return, modifiers: .command)
-            }
-            .padding(.horizontal, MSTheme.pagePadding)
-            .padding(.vertical, 14)
-            .background(MSTheme.canvas.opacity(0.95))
+    /// Results grouped by how much care they need, in display order.
+    private var groups: [ResultGroup] {
+        let indices = Array(session.results.indices)
+        let buckets: [(String, String, (RiskLevel) -> Bool)] = [
+            ("safe", "Safe to clean", { $0 == .safe }),
+            ("review", "Review first", { $0 == .moderate || $0 == .risky }),
+            ("manual", "Do it yourself", { $0 == .manual }),
+        ]
+        var offset = 0
+        return buckets.compactMap { id, title, matches in
+            let members = indices.filter { matches(session.results[$0].category.risk) }
+            guard !members.isEmpty else { return nil }
+            defer { offset += members.count }
+            return ResultGroup(id: id, title: title, indices: members, startOffset: offset)
         }
     }
+}
+
+private struct ResultGroup: Identifiable {
+    let id: String
+    let title: String
+    let indices: [Int]
+    /// Position of the first row across all groups, for the stagger.
+    let startOffset: Int
+}
+
+private struct IndexedRow: Identifiable {
+    let index: Int
+    var id: Int { index }
 }
 
 #Preview {

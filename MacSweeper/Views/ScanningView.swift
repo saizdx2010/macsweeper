@@ -18,58 +18,62 @@ struct ScanningView: View {
         ZStack {
             StageBackground()
 
-            VStack(spacing: 28) {
+            VStack(spacing: 0) {
                 Spacer()
 
-                DiskRingView(
-                    usedFraction: ringDrawn ? session.progressFraction : 0,
-                    lineWidth: MSTheme.heroRingLineWidth,
-                    size: MSTheme.heroRingSize
+                ScanSweepRing(
+                    progress: ringDrawn ? session.progressFraction : 0,
+                    isActive: session.phase == .scanning || session.phase == .idle
                 ) {
-                    VStack(spacing: 6) {
+                    VStack(spacing: 4) {
                         Text(progressLabel)
-                            .font(.system(size: 34, weight: .semibold, design: .rounded))
+                            .font(MSTheme.displayFont)
                             .monospacedDigit()
                             .contentTransition(.numericText())
-                            .animation(.snappy(duration: 0.2), value: session.scannedRuleCount)
+                            .animation(MSMotion.fast, value: session.scannedRuleCount)
                         Text("scanned")
-                            .font(.title3)
+                            .font(.callout)
                             .foregroundStyle(.secondary)
                     }
                 }
-                .animation(.easeInOut(duration: 0.35), value: session.progressFraction)
+                .animation(MSMotion.base, value: session.progressFraction)
 
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     Text(headline)
                         .font(MSTheme.titleFont)
                     Text(session.statusMessage)
-                        .font(.subheadline)
+                        .font(.callout)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
-                        .frame(maxWidth: 360)
-                        .animation(.easeInOut(duration: 0.2), value: session.statusMessage)
+                        .lineLimit(2)
+                        .frame(maxWidth: 380, minHeight: 36, alignment: .top)
+                        .contentTransition(.opacity)
+                        .animation(MSMotion.fast, value: session.statusMessage)
                 }
+                .padding(.top, 26)
 
-                if session.phase == .scanning {
-                    Button("Cancel") {
-                        session.cancel()
-                    }
-                    .keyboardShortcut(.cancelAction)
-                } else if session.phase == .cancelled || isFailed {
-                    VStack(spacing: 12) {
-                        if case .failed(let message) = session.phase {
-                            Text(message)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                                .frame(maxWidth: 360)
+                Group {
+                    if session.phase == .scanning {
+                        SecondaryCTAButton(title: "Cancel", expands: false) {
+                            session.cancel()
                         }
-                        PrimaryCTAButton(title: "Back to Home") {
-                            AppNavigation.popToRoot($path)
+                        .keyboardShortcut(.cancelAction)
+                    } else if session.phase == .cancelled || isFailed {
+                        VStack(spacing: 12) {
+                            if case .failed(let message) = session.phase {
+                                Text(message)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: 360)
+                            }
+                            PrimaryCTAButton(title: "Back to Home", expands: false) {
+                                AppNavigation.popToRoot($path)
+                            }
                         }
-                        .frame(maxWidth: 280)
                     }
                 }
+                .padding(.top, 18)
 
                 Spacer()
             }
@@ -81,7 +85,7 @@ struct ScanningView: View {
             onBack: { AppNavigation.popToRoot($path) }
         )
         .onAppear {
-            withAnimation(.easeOut(duration: 0.6)) {
+            withAnimation(MSMotion.slow) {
                 ringDrawn = true
             }
             guard !didStart else { return }

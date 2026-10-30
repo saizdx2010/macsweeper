@@ -47,7 +47,7 @@ struct DiskBrowseView: View {
                         if let error = browse.errorMessage {
                             Text(error)
                                 .font(.callout)
-                                .foregroundStyle(.red)
+                                .foregroundStyle(MSTheme.danger)
                         }
 
                         entriesCard

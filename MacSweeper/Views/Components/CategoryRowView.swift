@@ -52,7 +52,7 @@ struct CategoryRowView: View {
             } label: {
                 Image(systemName: result.isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.body)
-                    .foregroundStyle(result.isSelected ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(result.isSelected ? MSTheme.accent : Color.secondary)
             }
             .buttonStyle(.msActionable)
             .frame(width: 18, height: 18)

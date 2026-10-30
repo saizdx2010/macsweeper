@@ -1,63 +1,69 @@
 import SwiftUI
 
-/// Card-styled category row for results and clean summary.
-struct CategoryCardRow: View {
+/// Compact category row for the results sheet: checkbox, icon tile, name, size, chevron.
+struct CategoryListRow: View {
     @Binding var result: ScanResult
-    var showsSelection: Bool = true
-    var showsChevron: Bool = true
+    /// Change since the previous scan ("+1.2 GB since last scan"), shown instead of the item count.
+    var change: String? = nil
     var onDetails: (() -> Void)? = nil
 
     private var isManual: Bool { result.category.risk == .manual }
     private var isRisky: Bool { result.category.risk == .risky }
 
     var body: some View {
-        MSCard {
-            HStack(spacing: 12) {
-                if showsSelection {
-                    selectionControl
-                }
+        HStack(spacing: 12) {
+            selectionControl
 
-                if let onDetails {
-                    Button(action: onDetails) {
-                        detailsContent
-                    }
-                    .buttonStyle(.msActionable)
-                    .accessibilityLabel("Details for \(result.category.label)")
-                } else {
-                    detailsContent
+            if let onDetails {
+                Button(action: onDetails) {
+                    details
                 }
+                .buttonStyle(.msActionable)
+                .accessibilityLabel("Details for \(result.category.label)")
+            } else {
+                details
             }
         }
-        .opacity(isRisky ? 0.75 : 1)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
-    private var detailsContent: some View {
+    private var details: some View {
         HStack(spacing: 12) {
-            iconTile
+            CategoryIconTile(category: result.category, size: 30)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(result.category.label)
                     .font(.body.weight(.medium))
                     .lineLimit(1)
-                RiskBadge(risk: result.category.risk)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(isRisky ? AnyShapeStyle(MSTheme.danger) : AnyShapeStyle(.secondary))
+                    .lineLimit(1)
             }
 
             Spacer(minLength: 8)
 
             sizeLabel
 
-            if showsChevron {
+            if onDetails != nil {
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
-                    .frame(width: 20, height: 28)
+                    .frame(width: 12)
             }
         }
         .contentShape(Rectangle())
     }
 
-    private var iconTile: some View {
-        CategoryIconTile(category: result.category)
+    private var subtitle: String {
+        if let change { return change }
+        if isManual { return "Guide · copy a command to run yourself" }
+        let count = result.paths.count
+        var parts = ["\(count) item\(count == 1 ? "" : "s")"]
+        if result.category.isDevGroup { parts.append("Dev") }
+        if isRisky { parts.append("Risky, check the paths") }
+        return parts.joined(separator: " · ")
     }
 
     @ViewBuilder
@@ -66,17 +72,12 @@ struct CategoryCardRow: View {
             Image(systemName: "minus")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
-                .frame(width: 22, height: 22)
+                .frame(width: 16, height: 16)
                 .accessibilityLabel("Guide only, no selection")
         } else {
-            Button {
+            MSCheckbox(isOn: result.isSelected) {
                 result.setAllPathsSelected(!result.isSelected)
-            } label: {
-                Image(systemName: result.isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundStyle(result.isSelected ? MSTheme.accent : Color.secondary.opacity(0.55))
             }
-            .buttonStyle(.msActionable)
             .accessibilityLabel(result.isSelected ? "Selected \(result.category.label)" : "Not selected \(result.category.label)")
         }
     }
@@ -85,12 +86,12 @@ struct CategoryCardRow: View {
     private var sizeLabel: some View {
         if isManual, result.totalBytes == 0 {
             Text("Guide")
-                .font(.subheadline.weight(.medium))
+                .font(.callout.weight(.medium))
                 .foregroundStyle(.secondary)
         } else if result.selectedBytes != result.totalBytes, result.selectedBytes > 0 {
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: 1) {
                 Text(ByteCountFormatter.string(fromByteCount: result.selectedBytes, countStyle: .file))
-                    .font(.body.weight(.semibold))
+                    .font(.callout.weight(.semibold))
                     .monospacedDigit()
                 Text("of \(ByteCountFormatter.string(fromByteCount: result.totalBytes, countStyle: .file))")
                     .font(.caption2)
@@ -99,38 +100,89 @@ struct CategoryCardRow: View {
             }
         } else {
             Text(ByteCountFormatter.string(fromByteCount: result.totalBytes, countStyle: .file))
-                .font(.body.weight(.semibold))
+                .font(.callout.weight(.semibold))
                 .monospacedDigit()
+                .foregroundStyle(result.isSelected || isManual ? .primary : .secondary)
         }
     }
 }
 
-/// Read-only summary row for clean confirm.
-struct CategorySummaryCard: View {
+/// Read-only row for the clean confirm list.
+struct CategorySummaryRow: View {
     let result: ScanResult
 
     var body: some View {
-        MSCard {
-            HStack(spacing: 12) {
-                CategoryIconTile(category: result.category)
+        HStack(spacing: 12) {
+            CategoryIconTile(category: result.category, size: 30)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(result.category.label)
-                        .font(.body.weight(.medium))
-                    if result.category.action == .emptyTrash {
-                        Text("Permanent delete")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                    }
+            VStack(alignment: .leading, spacing: 1) {
+                Text(result.category.label)
+                    .font(.body.weight(.medium))
+                if result.category.action == .emptyTrash {
+                    Text("Permanent delete")
+                        .font(.caption)
+                        .foregroundStyle(MSTheme.warning)
                 }
+            }
 
-                Spacer(minLength: 8)
+            Spacer(minLength: 8)
 
-                Text(ByteCountFormatter.string(fromByteCount: result.selectedBytes > 0 ? result.selectedBytes : result.totalBytes, countStyle: .file))
-                    .font(.body.weight(.semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
+            Text(ByteCountFormatter.string(fromByteCount: result.selectedBytes > 0 ? result.selectedBytes : result.totalBytes, countStyle: .file))
+                .font(.callout.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+}
+
+/// Grouped list surface: rows separated by inset hairlines on one soft rounded panel.
+struct MSGroupedRows<Item: Identifiable, Row: View>: View {
+    let items: [Item]
+    @ViewBuilder var row: (Int, Item) -> Row
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.element.id) { offset, item in
+                if offset > 0 {
+                    Rectangle()
+                        .fill(MSTheme.hairline)
+                        .frame(height: 1)
+                        .padding(.leading, 54)
+                }
+                row(offset, item)
             }
         }
+        .background(Color.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(MSTheme.cardStroke, lineWidth: 1)
+        )
+    }
+}
+
+/// Rounded teal checkbox.
+struct MSCheckbox: View {
+    let isOn: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 4.5, style: .continuous)
+                    .fill(isOn ? AnyShapeStyle(MSTheme.accent) : AnyShapeStyle(Color.clear))
+                RoundedRectangle(cornerRadius: 4.5, style: .continuous)
+                    .strokeBorder(isOn ? Color.clear : Color.secondary.opacity(0.5), lineWidth: 1.2)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.white)
+                    .scaleEffect(isOn ? 1 : 0.4)
+                    .opacity(isOn ? 1 : 0)
+            }
+            .frame(width: 16, height: 16)
+            .animation(MSMotion.fast, value: isOn)
+        }
+        .buttonStyle(.msActionable)
     }
 }

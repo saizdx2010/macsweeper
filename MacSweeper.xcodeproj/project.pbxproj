@@ -27,6 +27,7 @@
 		6C10E493BD6E913FD9487BB7 /* ScanEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88BF90177A8C59D9B06421D /* ScanEngine.swift */; };
 		72C038B941B1C89FBAE08E25 /* CategoryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59072EA92D81657972BBA87B /* CategoryDetailView.swift */; };
 		7521D963D8D8FBEDC3BACF28 /* ScanResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 058449D8D50A0F46CDC1C7DD /* ScanResult.swift */; };
+		7819CC94E042F0E0DC5EB7C0 /* MSIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDDC26F7E85D0F49EB51CFF /* MSIcon.swift */; };
 		784E11476CD88E8E4C4B12F0 /* DiskRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72DD82245B6A9DDAD0DFBD87 /* DiskRingView.swift */; };
 		7BA6EFDAB614E1468BC45EDF /* CleanConfirmPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D270DE2DE5E185E296565D32 /* CleanConfirmPolicy.swift */; };
 		7D4DDD4FFCF5586B020279A4 /* CategoryCardRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18B36962518B369841DDF36 /* CategoryCardRow.swift */; };
@@ -56,6 +57,7 @@
 		DC1770D795FD3F94B44FC7F9 /* TroubleshootingGuidesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B27929811DCEE2A2E16EBC05 /* TroubleshootingGuidesTests.swift */; };
 		DC8DD40FBD8796026CBBB232 /* NavigationChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88941B95C83E63C7DEDDD0E1 /* NavigationChrome.swift */; };
 		DCED6ACCACCA441FBE7347CE /* InstallerAndStaleArtifactTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2525929E3B44FECE61D976 /* InstallerAndStaleArtifactTests.swift */; };
+		DF73387B3AE39C85B834449E /* IconSetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F340CDCE87A2F4FBA0DEF5 /* IconSetTests.swift */; };
 		E36DF4C40B093DBF87D5A08E /* ScanningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F34E37FBB0DDB91BDEACF /* ScanningView.swift */; };
 		EA6EA457A0E153B80E3270AB /* CategoryRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D342DE9604B618F0E6F7B7F /* CategoryRowView.swift */; };
 		EB5AC9C90F68F643FE4C7A5A /* CategoryLabelResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B0A941F1054C916099FE5EE /* CategoryLabelResolver.swift */; };
@@ -105,12 +107,14 @@
 		803C24AB453B82AEAE0D8127 /* ScanCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanCategory.swift; sourceTree = "<group>"; };
 		831085989A1B279E4F518F34 /* MacSweeperApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacSweeperApp.swift; sourceTree = "<group>"; };
 		88941B95C83E63C7DEDDD0E1 /* NavigationChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationChrome.swift; sourceTree = "<group>"; };
+		96F340CDCE87A2F4FBA0DEF5 /* IconSetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconSetTests.swift; sourceTree = "<group>"; };
 		9B0A941F1054C916099FE5EE /* CategoryLabelResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryLabelResolver.swift; sourceTree = "<group>"; };
 		9EB97E0048A85088610E831C /* StaleProjectArtifactScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaleProjectArtifactScanner.swift; sourceTree = "<group>"; };
 		A42846CF146659AB5D63326C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		A5EC97B5214D6499A898A097 /* TroubleshootingGuides.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TroubleshootingGuides.swift; sourceTree = "<group>"; };
 		A88BF90177A8C59D9B06421D /* ScanEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanEngine.swift; sourceTree = "<group>"; };
 		AC2CCB0413DD8BB7F38B70A5 /* RiskLevel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiskLevel.swift; sourceTree = "<group>"; };
+		ADDDC26F7E85D0F49EB51CFF /* MSIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MSIcon.swift; sourceTree = "<group>"; };
 		B27929811DCEE2A2E16EBC05 /* TroubleshootingGuidesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TroubleshootingGuidesTests.swift; sourceTree = "<group>"; };
 		B3A3DD5F8A5483484DC0C025 /* CleanupSafetyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupSafetyTests.swift; sourceTree = "<group>"; };
 		C143946B2DA3C319474E85C6 /* MacSweeperTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacSweeperTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -202,6 +206,7 @@
 				B3A3DD5F8A5483484DC0C025 /* CleanupSafetyTests.swift */,
 				1D69BF236BFF8E84657B26DC /* DiskSizingTests.swift */,
 				0F43FD2699309EA964F133DC /* HistoryTests.swift */,
+				96F340CDCE87A2F4FBA0DEF5 /* IconSetTests.swift */,
 				CB2525929E3B44FECE61D976 /* InstallerAndStaleArtifactTests.swift */,
 				F3B5A92DAC24824124CDA986 /* OrphanedLeftoversTests.swift */,
 				B27929811DCEE2A2E16EBC05 /* TroubleshootingGuidesTests.swift */,
@@ -235,6 +240,7 @@
 		582401A4C0DE3DAFE6C3D376 /* Theme */ = {
 			isa = PBXGroup;
 			children = (
+				ADDDC26F7E85D0F49EB51CFF /* MSIcon.swift */,
 				33874FBF0CFF80B019A86F6B /* MSTheme.swift */,
 				88941B95C83E63C7DEDDD0E1 /* NavigationChrome.swift */,
 			);
@@ -386,6 +392,7 @@
 				15F661DA33832B0DDA768911 /* FullDiskAccessService.swift in Sources */,
 				9F780ED58C215B516D4B6CBB /* HomeView.swift in Sources */,
 				B0A935A08BDE8BD525141521 /* InstallerLeftoverScanner.swift in Sources */,
+				7819CC94E042F0E0DC5EB7C0 /* MSIcon.swift in Sources */,
 				B9EDD1776C15B4DD8AB5BF4F /* MSTheme.swift in Sources */,
 				1611116B64EC3BC736FD7407 /* MacSweeperApp.swift in Sources */,
 				DC8DD40FBD8796026CBBB232 /* NavigationChrome.swift in Sources */,
@@ -416,6 +423,7 @@
 				34DAD9DEFEEC36801610EE55 /* CleanupSafetyTests.swift in Sources */,
 				7DF05892B0895B8D01C8DD9D /* DiskSizingTests.swift in Sources */,
 				A293D6694C67375F0B91C5C0 /* HistoryTests.swift in Sources */,
+				DF73387B3AE39C85B834449E /* IconSetTests.swift in Sources */,
 				DCED6ACCACCA441FBE7347CE /* InstallerAndStaleArtifactTests.swift in Sources */,
 				A6EBF796CF85E1D54D288D52 /* OrphanedLeftoversTests.swift in Sources */,
 				DC1770D795FD3F94B44FC7F9 /* TroubleshootingGuidesTests.swift in Sources */,

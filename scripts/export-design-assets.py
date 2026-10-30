@@ -3,6 +3,7 @@
 
 The board (design/figcraft/MacSweeper.figcraft.html) is the source of truth:
 - <symbol id="i-*"> elements become design/figcraft/icons/<name>.svg
+  and MacSweeper/Assets.xcassets/Icons/ms-<name>.imageset (vector template images)
 - ICONS entries in the board script become design/figcraft/app-icons/<n>-<name>.svg
 
 Icons are written with a black stroke so Xcode treats them as template images.
@@ -15,20 +16,45 @@ ROOT = Path(__file__).resolve().parent.parent
 BOARD = ROOT / "design/figcraft/MacSweeper.figcraft.html"
 ICON_DIR = ROOT / "design/figcraft/icons"
 APP_ICON_DIR = ROOT / "design/figcraft/app-icons"
+ASSET_ICON_DIR = ROOT / "MacSweeper/Assets.xcassets/Icons"
 
+# Stroke attributes live on a <g> so Xcode's SVG importer applies them to every shape.
 ICON_TEMPLATE = (
-    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" '
-    'fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
-    "{body}</svg>\n"
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">'
+    '<g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
+    "{body}</g></svg>\n"
 )
+
+IMAGESET_CONTENTS = """{{
+  "images" : [ {{ "filename" : "{name}.svg", "idiom" : "universal" }} ],
+  "info" : {{ "author" : "xcode", "version" : 1 }},
+  "properties" : {{
+    "preserves-vector-representation" : true,
+    "template-rendering-intent" : "template"
+  }}
+}}
+"""
+
+FOLDER_CONTENTS = """{
+  "info" : { "author" : "xcode", "version" : 1 }
+}
+"""
 
 
 def export_icons(html: str) -> int:
     ICON_DIR.mkdir(parents=True, exist_ok=True)
     symbols = re.findall(r'<symbol id="i-([\w-]+)" viewBox="0 0 24 24">(.*?)</symbol>', html, re.S)
+    ASSET_ICON_DIR.mkdir(parents=True, exist_ok=True)
+    (ASSET_ICON_DIR / "Contents.json").write_text(FOLDER_CONTENTS)
     for name, body in symbols:
         body = body.replace('fill="currentColor"', 'fill="#000"')
-        (ICON_DIR / f"{name}.svg").write_text(ICON_TEMPLATE.format(body=body))
+        svg = ICON_TEMPLATE.format(body=body)
+        (ICON_DIR / f"{name}.svg").write_text(svg)
+        # Asset name "ms-<name>" is what `MSIcon` loads in SwiftUI.
+        imageset = ASSET_ICON_DIR / f"ms-{name}.imageset"
+        imageset.mkdir(exist_ok=True)
+        (imageset / f"{name}.svg").write_text(svg)
+        (imageset / "Contents.json").write_text(IMAGESET_CONTENTS.format(name=name))
     return len(symbols)
 
 

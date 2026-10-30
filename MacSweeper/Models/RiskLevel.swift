@@ -27,9 +27,9 @@ enum RiskLevel: String, Codable, CaseIterable, Identifiable {
         case .safe:
             return .secondary
         case .moderate:
-            return .orange
+            return MSTheme.warning
         case .risky:
-            return .red.opacity(0.8)
+            return MSTheme.danger
         case .manual:
             return .secondary
         }

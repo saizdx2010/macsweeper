@@ -10,10 +10,11 @@ struct HomeView: View {
     @State private var path = NavigationPath()
     @State private var ringDrawn = false
     @State private var hasFullDiskAccess = true
+    @State private var showHelp = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let diskSpace = DiskSpaceService()
     private let diskPressureThreshold = 0.85
-    private let contentMaxWidth: CGFloat = 580
 
     private static let relativeFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
@@ -86,49 +87,80 @@ struct HomeView: View {
             StageBackground()
 
             VStack(spacing: 0) {
-                GradientText(text: "MacSweeper")
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 4)
+                Spacer(minLength: 12)
 
-                VStack(spacing: 0) {
-                    ViewThatFits(in: .horizontal) {
-                        splitHero
-                        stackedHero
-                    }
-                    .padding(.top, 24)
+                diskRing
 
-                    coverageBand
-                        .padding(.top, 28)
-
-                    footerZone
-                        .padding(.top, 20)
+                if let snapshot {
+                    Text(diskContextLabel(for: snapshot))
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .padding(.top, 14)
                 }
-                .frame(maxWidth: contentMaxWidth)
-                .frame(maxWidth: .infinity)
 
-                Spacer(minLength: 8)
+                PrimaryCTANavigationLink(
+                    title: "Scan Mac",
+                    value: AppRoute.scanning,
+                    icon: .scan,
+                    expands: false
+                )
+                .frame(minWidth: MSTheme.ctaWidth)
+                .keyboardShortcut("r", modifiers: .command)
+                .padding(.top, 26)
+
+                Text(tagline)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 14)
+
+                if !hasFullDiskAccess {
+                    Button("Full Disk Access is off. Open Settings") {
+                        FullDiskAccessService.openSystemSettings()
+                    }
+                    .buttonStyle(.msActionable)
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(MSTheme.warning)
+                    .help("Needed to empty the Trash")
+                    .padding(.top, 10)
+                }
+
+                Spacer(minLength: 12)
+
+                footer
             }
-            .padding(MSTheme.pagePadding)
+            .padding(.horizontal, MSTheme.pagePadding)
+            .padding(.bottom, 16)
         }
-        .frame(minWidth: 640, minHeight: 480)
+        .frame(minWidth: 640, minHeight: 520)
         .navigationBarBackButtonHidden(true)
-        // The wordmark already names the app; keep the bar empty and see-through.
         .navigationTitle("")
         .toolbarBackground(.hidden, for: .windowToolbar)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                HomeSectionBar(
+                    onDisk: { path.append(AppRoute.browse(rootPath: nil)) },
+                    onHistory: { path.append(AppRoute.history) },
+                    onHelp: { showHelp = true }
+                )
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     path.append(AppRoute.settings)
                 } label: {
-                    Image(systemName: "gearshape")
+                    MSIconView(icon: .settings, size: 16)
                 }
                 .help("Settings")
                 .accessibilityLabel("Settings")
             }
         }
+        .sheet(isPresented: $showHelp) {
+            TroubleshootingView()
+        }
         .task {
             refreshHomeState()
-            withAnimation(.easeOut(duration: 0.8)) {
+            withAnimation(ringAnimation) {
                 ringDrawn = true
             }
         }
@@ -144,40 +176,21 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Hero layouts
-
-    private var splitHero: some View {
-        HStack(alignment: .center, spacing: 28) {
-            diskRing
-            infoColumn(alignment: .leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var stackedHero: some View {
-        VStack(spacing: 20) {
-            diskRing
-            infoColumn(alignment: .center)
-                .frame(maxWidth: .infinity)
-        }
-        .frame(maxWidth: .infinity)
+    private var ringAnimation: Animation {
+        MSMotion.resolve(.smooth(duration: 0.9), reduceMotion: reduceMotion)
     }
 
     private var diskRing: some View {
         DiskRingView(
             usedFraction: ringDrawn ? (snapshot?.usedFraction ?? 0) : 0,
-            lineWidth: MSTheme.homeRingLineWidth,
-            size: MSTheme.homeRingSize,
             progressColors: isDiskUnderPressure ? MSTheme.pressureColors : MSTheme.brandColors
         ) {
             if let snapshot {
                 VStack(spacing: 4) {
-                    Text(ByteCountFormatter.string(fromByteCount: snapshot.freeBytes, countStyle: .file))
-                        .font(.system(size: 26, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
+                    CountingBytesText(bytes: ringDrawn ? Double(snapshot.freeBytes) : 0)
+                        .font(MSTheme.displayFont)
                     Text("free")
-                        .font(.subheadline)
+                        .font(.callout)
                         .foregroundStyle(.secondary)
                 }
             } else {
@@ -186,7 +199,7 @@ struct HomeView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .animation(.easeOut(duration: 0.8), value: ringDrawn)
+        .animation(ringAnimation, value: ringDrawn)
         .accessibilityValue(diskRingAccessibilityValue)
     }
 
@@ -197,206 +210,56 @@ struct HomeView: View {
         return "\(free) free, \(pct) percent used"
     }
 
-    private func infoColumn(alignment: HorizontalAlignment) -> some View {
-        let textAlignment: TextAlignment = alignment == .leading ? .leading : .center
-        return VStack(alignment: alignment, spacing: 12) {
-            if let snapshot {
-                Text(diskContextLabel(for: snapshot))
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(.primary)
-                    .monospacedDigit()
-                    .multilineTextAlignment(textAlignment)
-            }
-
-            Text(tagline)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(textAlignment)
-                .fixedSize(horizontal: false, vertical: true)
-
-            PrimaryCTANavigationLink(
-                title: "Scan My Mac",
-                value: AppRoute.scanning
-            )
-            .frame(maxWidth: 280)
-            .padding(.top, 4)
-
-            SecondaryCTAButton(title: "Browse disk", expands: true) {
-                path.append(AppRoute.browse(rootPath: nil))
-            }
-            .frame(maxWidth: 280)
-
-            if !hasFullDiskAccess {
-                VStack(alignment: alignment, spacing: 4) {
-                    Button("Full Disk Access needed → Open Settings") {
-                        FullDiskAccessService.openSystemSettings()
-                    }
-                    .buttonStyle(.msActionable)
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(MSTheme.accent)
-                    .multilineTextAlignment(textAlignment)
-
-                    Text("Required to empty Trash.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(textAlignment)
-                }
-                .padding(.top, 2)
-            }
-        }
-    }
-
-    // MARK: - Coverage band
-
-    private var coverageBand: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Divider()
-                .opacity(0.45)
-
-            Text("What a scan looks for")
-                .font(.headline)
-                .foregroundStyle(.primary)
-
-            // Window min width keeps three columns readable; no stacked fallback needed.
-            HStack(alignment: .top, spacing: 12) {
-                ForEach(coverageColumns) { column in
-                    coverageColumnView(column)
-                }
-            }
-            .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var coverageColumns: [CoverageColumn] {
-        [
-            CoverageColumn(
-                id: "safe",
-                title: "Safe",
-                symbol: "sparkles",
-                tint: MSTheme.categoryPalette[5],
-                blurb: "Caches, logs, Slack, Zoom, Discord"
-            ),
-            CoverageColumn(
-                id: "review",
-                title: "Review",
-                symbol: "eye",
-                tint: MSTheme.categoryPalette[4],
-                blurb: "Downloads, Mail, Xcode leftovers"
-            ),
-            CoverageColumn(
-                id: "manual",
-                title: "Manual",
-                symbol: "terminal",
-                tint: MSTheme.accentIndigo,
-                blurb: manualCoverageBlurb
-            ),
-        ]
-    }
-
-    private var manualCoverageBlurb: String {
-        if includeDevMode {
-            return "Homebrew cleanup · Docker prune"
-        }
-        return "Copy-and-run commands when needed"
-    }
-
-    private func coverageColumnView(_ column: CoverageColumn) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label {
-                Text(column.title)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(.primary)
-            } icon: {
-                Image(systemName: column.symbol)
-                    .foregroundStyle(column.tint)
-            }
-            Text(column.blurb)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.leading)
-                .lineLimit(3)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(
-            column.tint.opacity(0.06),
-            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(column.tint.opacity(0.18), lineWidth: 1)
-        )
-    }
-
     // MARK: - Footer
 
-    private var footerZone: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Divider()
-                .opacity(0.5)
-
-            Toggle("Include Dev mode", isOn: $includeDevMode)
+    private var footer: some View {
+        HStack(spacing: 12) {
+            Toggle("Dev mode", isOn: $includeDevMode)
                 .toggleStyle(.switch)
-                .tint(MSTheme.accentIndigo)
-
-            Text(devModeCaption)
+                .controlSize(.mini)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+                .help(devModeCaption)
 
-            if settings.keepCleanupHistory, let total = auditLog.lifetime, !auditLog.entries.isEmpty {
-                Text("MacSweeper has freed \(ByteCountFormatter.string(fromByteCount: total.freedBytes, countStyle: .file)) since \(total.firstDate.formatted(date: .abbreviated, time: .omitted))")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-            HStack(spacing: 16) {
-                Text(lastCleanLabel)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+            Spacer(minLength: 12)
 
-                if auditLog.lastClean != nil || !auditLog.entries.isEmpty {
-                    Button("History") {
-                        path.append(AppRoute.history)
-                    }
-                    .buttonStyle(.msActionable)
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(MSTheme.accent)
-                }
-            }
+            Text(footerStatus)
+                .font(.footnote)
+                .foregroundStyle(.tertiary)
+                .monospacedDigit()
+                .lineLimit(1)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.bottom, 4)
+        .frame(maxWidth: 560)
     }
 
     // MARK: - Labels
 
     private var tagline: String {
         if isDiskUnderPressure {
-            return "Disk getting tight — scan to see what you can reclaim"
+            return "Your disk is nearly full. A scan shows what is safe to remove."
         }
-        return "Reclaim space safely — preview before anything moves"
+        return "Nothing is removed until you review it."
     }
 
     private var devModeCaption: String {
         let customCount = settings.customDevRoots.count
-        if includeDevMode {
-            if customCount > 0 {
-                return "Also scans project folders plus \(customCount) custom Dev root\(customCount == 1 ? "" : "s")."
-            }
-            return "Also scans project folders for node_modules, virtualenvs, and build caches."
+        if customCount > 0 {
+            return "Also scan project folders, plus \(customCount) custom Dev root\(customCount == 1 ? "" : "s"), for node_modules, virtualenvs and build caches."
         }
-        return "Scans project folders for node_modules, virtualenvs, and build caches."
+        return "Also scan project folders for node_modules, virtualenvs and build caches."
     }
 
-    private var lastCleanLabel: String {
+    private var footerStatus: String {
+        if settings.keepCleanupHistory, let total = auditLog.lifetime, !auditLog.entries.isEmpty {
+            let freed = ByteCountFormatter.string(fromByteCount: total.freedBytes, countStyle: .file)
+            return "\(freed) freed since \(total.firstDate.formatted(date: .abbreviated, time: .omitted))"
+        }
         guard let last = auditLog.lastClean else {
-            return "Last clean: —"
+            return "No cleans yet"
         }
         let size = ByteCountFormatter.string(fromByteCount: last.freedBytes, countStyle: .file)
         let when = Self.relativeFormatter.localizedString(for: last.date, relativeTo: Date())
-        return "Last clean: \(size) · \(last.itemCount) items · \(when)"
+        return "Last clean \(size) \(when)"
     }
 
     private func diskContextLabel(for snapshot: DiskSpaceService.Snapshot) -> String {
@@ -413,18 +276,41 @@ struct HomeView: View {
 
     private func reanimateRing() {
         ringDrawn = false
-        withAnimation(.easeOut(duration: 0.8)) {
+        withAnimation(ringAnimation) {
             ringDrawn = true
         }
     }
 }
 
-private struct CoverageColumn: Identifiable {
-    let id: String
-    let title: String
-    let symbol: String
-    let tint: Color
-    let blurb: String
+/// Toolbar pill with the secondary destinations: Disk, History, Help.
+private struct HomeSectionBar: View {
+    let onDisk: () -> Void
+    let onHistory: () -> Void
+    let onHelp: () -> Void
+
+    var body: some View {
+        HStack(spacing: 2) {
+            item("Disk", icon: .disk, action: onDisk)
+            item("History", icon: .history, action: onHistory)
+            item("Help", icon: .help, action: onHelp)
+        }
+        .padding(2)
+        .background(Color.primary.opacity(0.05), in: Capsule(style: .continuous))
+    }
+
+    private func item(_ title: String, icon: MSIcon, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                MSIconView(icon: icon, size: 13)
+                Text(title)
+            }
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 3)
+        }
+        .buttonStyle(MSActionableButtonStyle(cornerRadius: 99))
+    }
 }
 
 enum AppRoute: Hashable {

@@ -12,7 +12,7 @@ struct MacSweeperApp: App {
                 .environmentObject(settings)
                 .tint(MSTheme.accent)
         }
-        .defaultSize(width: 720, height: 560)
+        .defaultSize(width: 760, height: 600)
         .windowResizability(.contentMinSize)
     }
 }

@@ -45,7 +45,7 @@ private struct TroubleshootingGuideCard: View {
             if guide.needsAdmin {
                 Text("Needs your admin password in Terminal.")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(MSTheme.warning)
             }
             ForEach(guide.commands, id: \.self) { command in
                 HStack {
