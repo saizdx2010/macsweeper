@@ -164,14 +164,9 @@ struct CategoryDetailView: View {
     private func groupHeader(for group: LeftoverGrouping.Group) -> some View {
         HStack(spacing: 12) {
             if result.supportsItemSelection {
-                Button {
+                MSCheckbox(isOn: group.isFullySelected) {
                     toggleGroup(group)
-                } label: {
-                    Image(systemName: group.isFullySelected ? "checkmark.circle.fill" : "circle")
-                        .font(.title3)
-                        .foregroundStyle(group.isFullySelected ? MSTheme.accent : Color.secondary.opacity(0.55))
                 }
-                .buttonStyle(.msActionable)
                 .accessibilityLabel(
                     group.isFullySelected
                         ? "Deselect all \(group.label) leftovers"
@@ -457,14 +452,10 @@ struct CategoryDetailView: View {
     private func pathRow(for item: ScannedPath) -> some View {
         HStack(alignment: .top, spacing: 12) {
             if result.supportsItemSelection {
-                Button {
+                MSCheckbox(isOn: item.isSelected) {
                     togglePath(item.id)
-                } label: {
-                    Image(systemName: item.isSelected ? "checkmark.circle.fill" : "circle")
-                        .font(.title3)
-                        .foregroundStyle(item.isSelected ? MSTheme.accent : Color.secondary.opacity(0.55))
                 }
-                .buttonStyle(.msActionable)
+                .padding(.top, 2)
                 .accessibilityLabel(item.isSelected ? "Selected" : "Not selected")
             }
 

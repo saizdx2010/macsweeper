@@ -104,10 +104,14 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.msActionable)
 
-                            Button("Troubleshooting guides…") {
+                            Button {
                                 showTroubleshooting = true
+                            } label: {
+                                Text("Troubleshooting guides…")
+                                    .font(.body.weight(.medium))
+                                    .foregroundStyle(MSTheme.accent)
                             }
-                            .buttonStyle(.link)
+                            .buttonStyle(.msActionable)
                         }
                     }
                 }

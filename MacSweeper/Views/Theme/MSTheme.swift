@@ -4,13 +4,33 @@ import AppKit
 /// MacSweeper "Focus" design tokens: one teal accent, calm surfaces, category color only on icons.
 enum MSTheme {
     /// Teal brand accent for primary actions, selection and the disk ring.
-    static let accent = Color(red: 0.055, green: 0.624, blue: 0.557)
+    /// Deep enough for white button text in both appearances (≥ 3:1 at bold 15 pt).
+    static let accent = adaptive(
+        light: NSColor(red: 0.043, green: 0.541, blue: 0.486, alpha: 1),
+        dark: NSColor(red: 0.063, green: 0.588, blue: 0.525, alpha: 1)
+    )
     /// Lighter teal for the top of the primary button and the ring's leading edge.
-    static let accentLight = Color(red: 0.098, green: 0.765, blue: 0.663)
+    static let accentLight = adaptive(
+        light: NSColor(red: 0.063, green: 0.627, blue: 0.553, alpha: 1),
+        dark: NSColor(red: 0.110, green: 0.690, blue: 0.608, alpha: 1)
+    )
+
+    private static func adaptive(light: NSColor, dark: NSColor) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light
+        })
+    }
     /// Warm amber when disk pressure is high (≥85% used).
     static let pressure = Color(red: 0.95, green: 0.52, blue: 0.16)
-    static let warning = Color(red: 0.80, green: 0.47, blue: 0.02)
-    static let danger = Color(red: 0.86, green: 0.21, blue: 0.24)
+    /// Amber and red text colors, tuned for ≥ 4.5:1 on the window background in each appearance.
+    static let warning = adaptive(
+        light: NSColor(red: 0.66, green: 0.37, blue: 0.0, alpha: 1),
+        dark: NSColor(red: 0.96, green: 0.65, blue: 0.24, alpha: 1)
+    )
+    static let danger = adaptive(
+        light: NSColor(red: 0.78, green: 0.15, blue: 0.17, alpha: 1),
+        dark: NSColor(red: 1.0, green: 0.45, blue: 0.45, alpha: 1)
+    )
 
     static let brandColors: [Color] = [accentLight, accent]
     static let pressureColors: [Color] = [pressure, Color(red: 0.93, green: 0.27, blue: 0.33)]
@@ -202,7 +222,7 @@ private struct MSPrimaryCTAButtonBody: View {
         configuration.label
             .foregroundStyle(.white)
             .background(
-                Capsule(style: .continuous)
+                Capsule()
                     .fill(MSTheme.brandGradient)
                     .opacity(fillOpacity)
             )
@@ -212,7 +232,7 @@ private struct MSPrimaryCTAButtonBody: View {
                 radius: isHovered ? 12 : 8,
                 y: 5
             )
-            .contentShape(Capsule(style: .continuous))
+            .contentShape(Capsule())
             .onHover { hovering in
                 guard isEnabled else { return }
                 guard isHovered != hovering else { return }
@@ -252,16 +272,16 @@ private struct MSSecondaryCTAButtonBody: View {
         configuration.label
             .foregroundStyle(.primary)
             .background(
-                Capsule(style: .continuous)
+                Capsule()
                     .fill(Color.primary.opacity(fillOpacity))
             )
             .overlay(
-                Capsule(style: .continuous)
-                    .stroke(MSTheme.cardStroke, lineWidth: 1)
+                Capsule()
+                    .strokeBorder(MSTheme.cardStroke, lineWidth: 1)
             )
             .scaleEffect(configuration.isPressed ? 0.98 : (isHovered && isEnabled ? 1.01 : 1))
             .opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1) : 0.55)
-            .contentShape(Capsule(style: .continuous))
+            .contentShape(Capsule())
             .onHover { hovering in
                 guard isEnabled else { return }
                 guard isHovered != hovering else { return }
@@ -392,10 +412,18 @@ struct PrimaryCTANavigationLink<Value: Hashable>: View {
     }
 }
 
-/// Byte count that rolls between values when changed inside an animation (count-up).
+/// Byte count that counts up from zero to `value` when `isRevealed` flips inside an animation.
+/// The unit is fixed to the final value's unit so the number rolls without unit flicker.
 struct CountingBytesText: View, Animatable {
-    var bytes: Double
-    var prefix: String = ""
+    private var bytes: Double
+    private let units: ByteCountFormatter.Units
+    private let prefix: String
+
+    init(value: Int64, isRevealed: Bool = true, prefix: String = "") {
+        bytes = isRevealed ? Double(value) : 0
+        units = Self.units(for: value)
+        self.prefix = prefix
+    }
 
     var animatableData: Double {
         get { bytes }
@@ -403,7 +431,24 @@ struct CountingBytesText: View, Animatable {
     }
 
     var body: some View {
-        Text(prefix + ByteCountFormatter.string(fromByteCount: Int64(max(bytes, 0)), countStyle: .file))
+        Text(prefix + Self.format(Int64(max(bytes, 0)), units: units))
             .monospacedDigit()
+    }
+
+    private static func units(for value: Int64) -> ByteCountFormatter.Units {
+        switch abs(value) {
+        case 1_000_000_000_000...: return .useTB
+        case 1_000_000_000...: return .useGB
+        case 1_000_000...: return .useMB
+        default: return .useKB
+        }
+    }
+
+    private static func format(_ bytes: Int64, units: ByteCountFormatter.Units) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        formatter.allowedUnits = units
+        formatter.allowsNonnumericFormatting = false
+        return formatter.string(fromByteCount: bytes)
     }
 }

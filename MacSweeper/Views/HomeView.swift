@@ -106,7 +106,8 @@ struct HomeView: View {
                     expands: false
                 )
                 .frame(minWidth: MSTheme.ctaWidth)
-                .keyboardShortcut("r", modifiers: .command)
+                // Only while Home is on top; Results owns ⌘R (Rescan) once pushed.
+                .keyboardShortcut(path.isEmpty ? KeyboardShortcut("r", modifiers: .command) : nil)
                 .padding(.top, 26)
 
                 Text(tagline)
@@ -187,7 +188,7 @@ struct HomeView: View {
         ) {
             if let snapshot {
                 VStack(spacing: 4) {
-                    CountingBytesText(bytes: ringDrawn ? Double(snapshot.freeBytes) : 0)
+                    CountingBytesText(value: snapshot.freeBytes, isRevealed: ringDrawn)
                         .font(MSTheme.displayFont)
                     Text("free")
                         .font(.callout)

@@ -50,6 +50,11 @@ struct CleanFlowView: View {
         settings.deleteImmediately
     }
 
+    /// Nothing will rest in Trash afterwards, so the user cannot undo this clean.
+    private var isIrreversible: Bool {
+        deletesPermanently || includesEmptyTrash
+    }
+
     private var needsExtraConfirmation: Bool {
         CleanConfirmPolicy.requiresConfirmation(results: results)
     }
@@ -210,13 +215,19 @@ struct CleanFlowView: View {
                     Text(confirmHeadline)
                         .font(MSTheme.titleFont)
 
-                    MSGroupedRows(items: results) { _, result in
+                    MSGroupedRows(items: results, separatorInset: 54) { _, result in
                         CategorySummaryRow(result: result)
                     }
 
-                    Text(confirmFootnote)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    if isIrreversible {
+                        Label(confirmFootnote, systemImage: "exclamationmark.triangle.fill")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(MSTheme.warning)
+                    } else {
+                        Text(confirmFootnote)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .padding(MSTheme.pagePadding)
             }
@@ -228,10 +239,11 @@ struct CleanFlowView: View {
                         AppNavigation.popLast($navigationPath)
                     }
                     Spacer()
+                    // No keyboard shortcut: ⌘↩ opens this screen from Results, and a repeat
+                    // press must never clean without the user seeing this list.
                     PrimaryCTAButton(title: primaryActionTitle, icon: .clean, isEnabled: !results.isEmpty, expands: false) {
                         requestClean()
                     }
-                    .keyboardShortcut(.return, modifiers: .command)
                 }
                 .padding(.horizontal, MSTheme.pagePadding)
                 .padding(.vertical, 14)
@@ -312,7 +324,8 @@ struct CleanFlowView: View {
                     .foregroundStyle(.secondary)
             } else {
                 CountingBytesText(
-                    bytes: showDoneCelebration ? Double(outcome?.freedBytes ?? 0) : 0,
+                    value: outcome?.freedBytes ?? 0,
+                    isRevealed: showDoneCelebration,
                     prefix: "Freed "
                 )
                 .font(MSTheme.displayFont)

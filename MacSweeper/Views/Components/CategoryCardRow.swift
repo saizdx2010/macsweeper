@@ -140,6 +140,8 @@ struct CategorySummaryRow: View {
 /// Grouped list surface: rows separated by inset hairlines on one soft rounded panel.
 struct MSGroupedRows<Item: Identifiable, Row: View>: View {
     let items: [Item]
+    /// Leading inset of the separators; align with the row's title text.
+    var separatorInset: CGFloat = 82
     @ViewBuilder var row: (Int, Item) -> Row
 
     var body: some View {
@@ -149,7 +151,7 @@ struct MSGroupedRows<Item: Identifiable, Row: View>: View {
                     Rectangle()
                         .fill(MSTheme.hairline)
                         .frame(height: 1)
-                        .padding(.leading, 54)
+                        .padding(.leading, separatorInset)
                 }
                 row(offset, item)
             }

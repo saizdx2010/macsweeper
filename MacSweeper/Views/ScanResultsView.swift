@@ -15,8 +15,13 @@ struct ScanResultsView: View {
     private var isDevModeEnabled: Bool { includeDevMode || includeDevModeStorage }
 
     private var cleanButtonTitle: String {
-        let size = ByteCountFormatter.string(fromByteCount: selectedBytes, countStyle: .file)
-        return "Clean \(size)"
+        guard selectedBytes > 0 else { return "Clean" }
+        return "Clean \(ByteCountFormatter.string(fromByteCount: selectedBytes, countStyle: .file))"
+    }
+
+    private var selectedLabel: String {
+        guard selectedBytes > 0 else { return "Nothing selected yet" }
+        return "\(ByteCountFormatter.string(fromByteCount: selectedBytes, countStyle: .file)) selected"
     }
 
     var body: some View {
@@ -161,15 +166,15 @@ struct ScanResultsView: View {
         HStack(alignment: .center, spacing: 16) {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    CountingBytesText(bytes: cardsVisible ? Double(totalBytes) : 0)
+                    CountingBytesText(value: totalBytes, isRevealed: cardsVisible)
                         .font(.system(size: 26, weight: .semibold, design: .rounded))
+                        .animation(MSMotion.resolve(MSMotion.slow, reduceMotion: reduceMotion), value: cardsVisible)
                     Text("found")
                         .font(.title3)
                         .foregroundStyle(.secondary)
                 }
-                .animation(MSMotion.resolve(MSMotion.slow, reduceMotion: reduceMotion), value: cardsVisible)
 
-                Text("\(ByteCountFormatter.string(fromByteCount: selectedBytes, countStyle: .file)) selected")
+                Text(selectedLabel)
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -192,10 +197,7 @@ struct ScanResultsView: View {
 
     private func groupSection(_ group: ResultGroup) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            MSSectionHeader(
-                title: group.title,
-                trailing: ByteCountFormatter.string(fromByteCount: group.indices.reduce(0) { $0 + session.results[$1].totalBytes }, countStyle: .file)
-            )
+            MSSectionHeader(title: group.title, trailing: groupSizeLabel(group))
             .padding(.horizontal, 4)
 
             MSGroupedRows(items: group.indices.map(IndexedRow.init)) { offset, row in
@@ -211,6 +213,12 @@ struct ScanResultsView: View {
                 .animation(rowAnimation(group.startOffset + offset), value: cardsVisible)
             }
         }
+    }
+
+    /// Group total, omitted for guide-only groups that measure nothing.
+    private func groupSizeLabel(_ group: ResultGroup) -> String? {
+        let bytes = group.indices.reduce(Int64(0)) { $0 + session.results[$1].totalBytes }
+        return bytes > 0 ? ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file) : nil
     }
 
     /// Stagger only the first few rows overall; the rest appear together.

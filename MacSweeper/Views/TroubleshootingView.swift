@@ -7,7 +7,7 @@ struct TroubleshootingView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("Troubleshooting")
+                Text("Help")
                     .font(.title2.weight(.semibold))
                 Spacer()
                 Button("Done") { dismiss() }
@@ -30,6 +30,7 @@ struct TroubleshootingView: View {
             }
         }
         .frame(minWidth: 560, minHeight: 520)
+        .background(StageBackground())
     }
 }
 

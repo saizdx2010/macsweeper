@@ -59,7 +59,6 @@
 		DCED6ACCACCA441FBE7347CE /* InstallerAndStaleArtifactTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2525929E3B44FECE61D976 /* InstallerAndStaleArtifactTests.swift */; };
 		DF73387B3AE39C85B834449E /* IconSetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F340CDCE87A2F4FBA0DEF5 /* IconSetTests.swift */; };
 		E36DF4C40B093DBF87D5A08E /* ScanningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F34E37FBB0DDB91BDEACF /* ScanningView.swift */; };
-		EA6EA457A0E153B80E3270AB /* CategoryRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D342DE9604B618F0E6F7B7F /* CategoryRowView.swift */; };
 		EB5AC9C90F68F643FE4C7A5A /* CategoryLabelResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B0A941F1054C916099FE5EE /* CategoryLabelResolver.swift */; };
 		FA1CC27A472F42AB7F8E47BD /* ScanResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FE54B1BAE4E12DD6D53D25 /* ScanResultsView.swift */; };
 /* End PBXBuildFile section */
@@ -98,7 +97,6 @@
 		474F34E37FBB0DDB91BDEACF /* ScanningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanningView.swift; sourceTree = "<group>"; };
 		4B9533BADF66B59E75B93583 /* UXPolishTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UXPolishTests.swift; sourceTree = "<group>"; };
 		4CEEEBA317F2E6766DEDA0F7 /* ScanSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanSession.swift; sourceTree = "<group>"; };
-		4D342DE9604B618F0E6F7B7F /* CategoryRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryRowView.swift; sourceTree = "<group>"; };
 		54068762317696DD68F933D7 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		59072EA92D81657972BBA87B /* CategoryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryDetailView.swift; sourceTree = "<group>"; };
 		68711D886AFBAFDDED65934F /* troubleshooting-guides.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "troubleshooting-guides.json"; sourceTree = "<group>"; };
@@ -230,7 +228,6 @@
 			children = (
 				E18B36962518B369841DDF36 /* CategoryCardRow.swift */,
 				F8F2D49DB28A2D3A92A08E42 /* CategoryIcon.swift */,
-				4D342DE9604B618F0E6F7B7F /* CategoryRowView.swift */,
 				72DD82245B6A9DDAD0DFBD87 /* DiskRingView.swift */,
 				695E1D76E98EF6B1C03AE9CE /* RiskBadge.swift */,
 			);
@@ -376,7 +373,6 @@
 				72C038B941B1C89FBAE08E25 /* CategoryDetailView.swift in Sources */,
 				AA4E6F9C3D3875406C04D112 /* CategoryIcon.swift in Sources */,
 				EB5AC9C90F68F643FE4C7A5A /* CategoryLabelResolver.swift in Sources */,
-				EA6EA457A0E153B80E3270AB /* CategoryRowView.swift in Sources */,
 				7BA6EFDAB614E1468BC45EDF /* CleanConfirmPolicy.swift in Sources */,
 				8B1CA678A0A7A1B1FD2A2F92 /* CleanFlowView.swift in Sources */,
 				1030F66E8D9BEA7832A38E16 /* CleanupHistoryView.swift in Sources */,
